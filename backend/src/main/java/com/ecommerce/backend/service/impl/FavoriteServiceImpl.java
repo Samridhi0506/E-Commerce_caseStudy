@@ -10,6 +10,7 @@ import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.FavoriteService;
 import org.springframework.stereotype.Service;
+import com.ecommerce.backend.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -33,10 +34,10 @@ public class FavoriteServiceImpl implements FavoriteService {
 public FavoriteResponse addFavorite(Long userId, AddFavoriteRequest request) {
 
     User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Product product = productRepository.findById(request.getProductId())
-            .orElseThrow(() -> new RuntimeException("Product not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     Favorite favorite = new Favorite();
     favorite.setUser(user);
@@ -56,7 +57,7 @@ public FavoriteResponse addFavorite(Long userId, AddFavoriteRequest request) {
 public List<FavoriteResponse> getFavoritesByUser(Long userId) {
 
     User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     List<Favorite> favorites = favoriteRepository.findByUser(user);
 
@@ -76,7 +77,7 @@ public List<FavoriteResponse> getFavoritesByUser(Long userId) {
 public void removeFavorite(Long favoriteId) {
 
     Favorite favorite = favoriteRepository.findById(favoriteId)
-            .orElseThrow(() -> new RuntimeException("Favorite not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Favorite not found"));
 
     favoriteRepository.delete(favorite);
 }

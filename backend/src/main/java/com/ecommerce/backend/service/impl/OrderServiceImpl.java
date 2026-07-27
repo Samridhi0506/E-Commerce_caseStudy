@@ -12,6 +12,8 @@ import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.OrderService;
 import org.springframework.stereotype.Service;
+import com.ecommerce.backend.exception.BadRequestException;
+import com.ecommerce.backend.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -38,13 +40,13 @@ public class OrderServiceImpl implements OrderService {
 public OrderResponse placeOrder(Long userId, CreateOrderRequest request) {
 
     User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Product product = productRepository.findById(request.getProductId())
-            .orElseThrow(() -> new RuntimeException("Product not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     if (product.getStock() < request.getQuantity()) {
-        throw new RuntimeException("Insufficient stock");
+        throw new BadRequestException("Insufficient stock");
     }
 
     Order order = new Order();
@@ -92,7 +94,7 @@ public OrderResponse placeOrder(Long userId, CreateOrderRequest request) {
 public List<OrderResponse> getOrdersByUser(Long userId) {
 
     User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     List<Order> orders = orderRepository.findByUser(user);
 
@@ -124,7 +126,7 @@ public List<OrderResponse> getOrdersByUser(Long userId) {
 public OrderResponse getOrderById(Long orderId) {
 
     Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
     List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
 
@@ -150,7 +152,7 @@ public OrderResponse getOrderById(Long orderId) {
 public void cancelOrder(Long orderId) {
 
     Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
     List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
 

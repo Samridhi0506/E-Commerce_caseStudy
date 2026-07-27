@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.ecommerce.backend.entity.Category;
 import com.ecommerce.backend.entity.Product;
 import com.ecommerce.backend.entity.Tenant;
+import com.ecommerce.backend.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -33,10 +34,10 @@ public class ProductServiceImpl implements ProductService {
 public ProductResponse createProduct(CreateProductRequest request) {
 
     Category category = categoryRepository.findById(request.getCategoryId())
-            .orElseThrow(() -> new RuntimeException("Category not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
     Tenant tenant = tenantRepository.findById(request.getTenantId())
-            .orElseThrow(() -> new RuntimeException("Tenant not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Product product = new Product();
     product.setProductName(request.getProductName());
@@ -64,10 +65,10 @@ public ProductResponse createProduct(CreateProductRequest request) {
 public ProductResponse updateProduct(Long productId, UpdateProductRequest request) {
 
     Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Product not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     Category category = categoryRepository.findById(request.getCategoryId())
-            .orElseThrow(() -> new RuntimeException("Category not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
     product.setProductName(request.getProductName());
     product.setDescription(request.getDescription());
@@ -93,7 +94,7 @@ public ProductResponse updateProduct(Long productId, UpdateProductRequest reques
 public void deleteProduct(Long productId) {
 
     Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Product not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     productRepository.delete(product);
 }
@@ -102,7 +103,7 @@ public void deleteProduct(Long productId) {
 public ProductResponse updateStock(Long productId, Integer quantity) {
 
     Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Product not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     product.setStock(quantity);
 
@@ -164,7 +165,7 @@ public List<ProductResponse> searchProducts(String keyword) {
 public List<ProductResponse> getProductsByCategory(Long categoryId) {
 
     Category category = categoryRepository.findById(categoryId)
-            .orElseThrow(() -> new RuntimeException("Category not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
     List<Product> products = productRepository.findByCategory(category);
 
@@ -187,7 +188,7 @@ public List<ProductResponse> getProductsByCategory(Long categoryId) {
 public List<ProductResponse> getProductsByTenant(Long tenantId) {
 
     Tenant tenant = tenantRepository.findById(tenantId)
-            .orElseThrow(() -> new RuntimeException("Tenant not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     List<Product> products = productRepository.findByTenant(tenant);
 

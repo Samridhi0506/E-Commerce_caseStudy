@@ -6,6 +6,7 @@ import com.ecommerce.backend.service.CategoryService;
 import org.springframework.stereotype.Service;
 import com.ecommerce.backend.repository.CategoryRepository;
 import com.ecommerce.backend.entity.Category;
+import com.ecommerce.backend.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -37,7 +38,7 @@ public CategoryResponse createCategory(CreateCategoryRequest request) {
 public CategoryResponse updateCategory(Long categoryId, CreateCategoryRequest request) {
 
     Category category = categoryRepository.findById(categoryId)
-            .orElseThrow(() -> new RuntimeException("Category not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
     category.setCategoryName(request.getCategoryName());
 
@@ -54,7 +55,7 @@ public CategoryResponse updateCategory(Long categoryId, CreateCategoryRequest re
 public void deleteCategory(Long categoryId) {
 
     Category category = categoryRepository.findById(categoryId)
-            .orElseThrow(() -> new RuntimeException("Category not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
     categoryRepository.delete(category);
 }
