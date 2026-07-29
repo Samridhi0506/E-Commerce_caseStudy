@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.ecommerce.backend.repository.CategoryRepository;
 import com.ecommerce.backend.entity.Category;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
+import com.ecommerce.backend.repository.TenantRepository;
 
 import java.util.List;
 
@@ -14,13 +15,20 @@ import java.util.List;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+private final TenantRepository tenantRepository;
 
-public CategoryServiceImpl(CategoryRepository categoryRepository) {
+public CategoryServiceImpl(CategoryRepository categoryRepository,
+                           TenantRepository tenantRepository) {
     this.categoryRepository = categoryRepository;
+    this.tenantRepository = tenantRepository;
 }
 
     @Override
-public CategoryResponse createCategory(CreateCategoryRequest request) {
+public CategoryResponse createCategory(String tenantName,
+                                       CreateCategoryRequest request) {
+
+    tenantRepository.findByTenantName(tenantName)
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Category category = new Category();
     category.setCategoryName(request.getCategoryName());
@@ -35,7 +43,12 @@ public CategoryResponse createCategory(CreateCategoryRequest request) {
 }
 
     @Override
-public CategoryResponse updateCategory(Long categoryId, CreateCategoryRequest request) {
+public CategoryResponse updateCategory(String tenantName,
+                                       Long categoryId,
+                                       CreateCategoryRequest request) {
+
+    tenantRepository.findByTenantName(tenantName)
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Category category = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -51,8 +64,11 @@ public CategoryResponse updateCategory(Long categoryId, CreateCategoryRequest re
     return response;
 }
 
-    @Override
-public void deleteCategory(Long categoryId) {
+   @Override
+public void deleteCategory(String tenantName, Long categoryId) {
+
+    tenantRepository.findByTenantName(tenantName)
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Category category = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -61,7 +77,10 @@ public void deleteCategory(Long categoryId) {
 }
 
     @Override
-public List<CategoryResponse> getAllCategories() {
+public List<CategoryResponse> getAllCategories(String tenantName) {
+
+    tenantRepository.findByTenantName(tenantName)
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     List<Category> categories = categoryRepository.findAll();
 

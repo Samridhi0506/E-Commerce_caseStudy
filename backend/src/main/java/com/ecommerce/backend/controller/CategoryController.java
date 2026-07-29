@@ -19,37 +19,46 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @PostMapping
+    @PostMapping("/{tenantName}")
     public ResponseEntity<CategoryResponse> createCategory(
-            @RequestBody CreateCategoryRequest request) {
+        @PathVariable String tenantName,
+        @RequestBody CreateCategoryRequest request) {
 
-        CategoryResponse response = categoryService.createCategory(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+    CategoryResponse response =
+            categoryService.createCategory(tenantName, request);
 
-    @GetMapping
-    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+}
 
-        List<CategoryResponse> categories = categoryService.getAllCategories();
-        return ResponseEntity.ok(categories);
-    }
+    @GetMapping("/{tenantName}")
+    public ResponseEntity<List<CategoryResponse>> getAllCategories(
+        @PathVariable String tenantName) {
 
-    @PutMapping("/{categoryId}")
+    List<CategoryResponse> categories =
+            categoryService.getAllCategories(tenantName);
+
+    return ResponseEntity.ok(categories);
+}
+
+    @PutMapping("/{tenantName}/{categoryId}")
     public ResponseEntity<CategoryResponse> updateCategory(
-            @PathVariable Long categoryId,
-            @RequestBody CreateCategoryRequest request) {
+        @PathVariable String tenantName,
+        @PathVariable Long categoryId,
+        @RequestBody CreateCategoryRequest request) {
 
-        CategoryResponse response =
-                categoryService.updateCategory(categoryId, request);
+    CategoryResponse response =
+            categoryService.updateCategory(tenantName, categoryId, request);
 
-        return ResponseEntity.ok(response);
-    }
+    return ResponseEntity.ok(response);
+}
 
-    @DeleteMapping("/{categoryId}")
+    @DeleteMapping("/{tenantName}/{categoryId}")
     public ResponseEntity<String> deleteCategory(
-            @PathVariable Long categoryId) {
+        @PathVariable String tenantName,
+        @PathVariable Long categoryId) {
 
-        categoryService.deleteCategory(categoryId);
-        return ResponseEntity.ok("Category deleted successfully.");
-    }
+    categoryService.deleteCategory(tenantName, categoryId);
+
+    return ResponseEntity.ok("Category deleted successfully.");
+}
 }
