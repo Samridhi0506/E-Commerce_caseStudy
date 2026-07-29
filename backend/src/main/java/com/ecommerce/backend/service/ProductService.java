@@ -3,24 +3,24 @@ package com.ecommerce.backend.service;
 import com.ecommerce.backend.dto.request.CreateProductRequest;
 import com.ecommerce.backend.dto.request.UpdateProductRequest;
 import com.ecommerce.backend.dto.response.ProductResponse;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 public interface ProductService {
 
-    ProductResponse createProduct(CreateProductRequest request);
+    ProductResponse createProduct(String tenantName, CreateProductRequest request);
 
-    ProductResponse updateProduct(Long productId, UpdateProductRequest request);
+    ProductResponse updateProduct(String tenantName, Long productId, UpdateProductRequest request);
 
-    void deleteProduct(Long productId);
+    void deleteProduct(String tenantName, Long productId);
 
-    ProductResponse updateStock(Long productId, Integer quantity);
+    ProductResponse updateStock(String tenantName, Long productId, Integer quantity);
 
-    List<ProductResponse> getAllProducts();
+    Page<ProductResponse> getAllProducts(String tenantName, int page, int size);
 
-    List<ProductResponse> searchProducts(String keyword);
+    List<ProductResponse> searchProducts(String tenantName, String keyword);
 
-    List<ProductResponse> getProductsByCategory(Long categoryId);
+    List<ProductResponse> getProductsByCategory(String tenantName, Long categoryId);
 
-    List<ProductResponse> getProductsByTenant(Long tenantId);
 }

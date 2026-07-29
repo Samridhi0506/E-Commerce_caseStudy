@@ -16,5 +16,4 @@ public class CreateProductRequest {
     private BigDecimal price;
     private Integer stock;
     private Long categoryId;
-    private Long tenantId;
 }

@@ -7,6 +7,7 @@ import com.ecommerce.backend.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -20,77 +21,82 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @PostMapping
+    @PostMapping("/{tenantName}")
     public ResponseEntity<ProductResponse> createProduct(
-            @RequestBody CreateProductRequest request) {
+        @PathVariable String tenantName,
+        @RequestBody CreateProductRequest request) {
 
-        ProductResponse response = productService.createProduct(request);
+        ProductResponse response =
+            productService.createProduct(tenantName, request);
+
         return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+}
 
-    @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
+   @GetMapping("/{tenantName}")
+public ResponseEntity<Page<ProductResponse>> getAllProducts(
+        @PathVariable String tenantName,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
 
-        List<ProductResponse> products = productService.getAllProducts();
-        return ResponseEntity.ok(products);
-    }
+    Page<ProductResponse> products =
+            productService.getAllProducts(tenantName, page, size);
 
-    @GetMapping("/search")
+    return ResponseEntity.ok(products);
+}
+
+    @GetMapping("/{tenantName}/search")
     public ResponseEntity<List<ProductResponse>> searchProducts(
-            @RequestParam String keyword) {
-
-        List<ProductResponse> products = productService.searchProducts(keyword);
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ProductResponse>> getProductsByCategory(
-            @PathVariable Long categoryId) {
+        @PathVariable String tenantName,
+        @RequestParam String keyword) {
 
         List<ProductResponse> products =
-                productService.getProductsByCategory(categoryId);
+            productService.searchProducts(tenantName, keyword);
 
         return ResponseEntity.ok(products);
-    }
+}
 
-    @GetMapping("/tenant/{tenantId}")
-    public ResponseEntity<List<ProductResponse>> getProductsByTenant(
-            @PathVariable Long tenantId) {
+    @GetMapping("/{tenantName}/category/{categoryId}")
+public ResponseEntity<List<ProductResponse>> getProductsByCategory(
+        @PathVariable String tenantName,
+        @PathVariable Long categoryId) {
 
-        List<ProductResponse> products =
-                productService.getProductsByTenant(tenantId);
+    List<ProductResponse> products =
+            productService.getProductsByCategory(tenantName, categoryId);
 
-        return ResponseEntity.ok(products);
-    }
+    return ResponseEntity.ok(products);
+}
 
-    @PutMapping("/{productId}")
-    public ResponseEntity<ProductResponse> updateProduct(
-            @PathVariable Long productId,
-            @RequestBody UpdateProductRequest request) {
+    @PutMapping("/{tenantName}/{productId}")
+public ResponseEntity<ProductResponse> updateProduct(
+        @PathVariable String tenantName,
+        @PathVariable Long productId,
+        @RequestBody UpdateProductRequest request) {
 
-        ProductResponse response =
-                productService.updateProduct(productId, request);
+    ProductResponse response =
+            productService.updateProduct(tenantName, productId, request);
 
-        return ResponseEntity.ok(response);
-    }
+    return ResponseEntity.ok(response);
+}
 
-    @PatchMapping("/{productId}/stock")
+    @PatchMapping("/{tenantName}/{productId}/stock")
     public ResponseEntity<ProductResponse> updateStock(
-            @PathVariable Long productId,
-            @RequestParam Integer quantity) {
+        @PathVariable String tenantName,
+        @PathVariable Long productId,
+        @RequestParam Integer quantity) {
 
-        ProductResponse response =
-                productService.updateStock(productId, quantity);
+    ProductResponse response =
+            productService.updateStock(tenantName, productId, quantity);
 
-        return ResponseEntity.ok(response);
-    }
+    return ResponseEntity.ok(response);
+}
 
-    @DeleteMapping("/{productId}")
-    public ResponseEntity<String> deleteProduct(
-            @PathVariable Long productId) {
+    @DeleteMapping("/{tenantName}/{productId}")
+public ResponseEntity<String> deleteProduct(
+        @PathVariable String tenantName,
+        @PathVariable Long productId) {
 
-        productService.deleteProduct(productId);
+    productService.deleteProduct(tenantName, productId);
 
-        return ResponseEntity.ok("Product deleted successfully.");
-    }
+    return ResponseEntity.ok("Product deleted successfully.");
+}
 }

@@ -12,6 +12,9 @@ import com.ecommerce.backend.entity.Category;
 import com.ecommerce.backend.entity.Product;
 import com.ecommerce.backend.entity.Tenant;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -31,12 +34,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-public ProductResponse createProduct(CreateProductRequest request) {
+public ProductResponse createProduct(String tenantName, CreateProductRequest request) {
 
     Category category = categoryRepository.findById(request.getCategoryId())
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
-    Tenant tenant = tenantRepository.findById(request.getTenantId())
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
             .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Product product = new Product();
@@ -62,10 +65,13 @@ public ProductResponse createProduct(CreateProductRequest request) {
 }
 
     @Override
-public ProductResponse updateProduct(Long productId, UpdateProductRequest request) {
+public ProductResponse updateProduct(String tenantName,Long productId,UpdateProductRequest request) {
 
-    Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+
+Product product = productRepository.findByProductIdAndTenant(productId, tenant)
+        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     Category category = categoryRepository.findById(request.getCategoryId())
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -91,19 +97,25 @@ public ProductResponse updateProduct(Long productId, UpdateProductRequest reques
 }
 
     @Override
-public void deleteProduct(Long productId) {
+public void deleteProduct(String tenantName, Long productId){
 
-    Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+
+Product product = productRepository.findByProductIdAndTenant(productId, tenant)
+        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     productRepository.delete(product);
 }
 
     @Override
-public ProductResponse updateStock(Long productId, Integer quantity) {
+public ProductResponse updateStock(String tenantName,Long productId,Integer quantity) {
 
-    Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+
+Product product = productRepository.findByProductIdAndTenant(productId, tenant)
+        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     product.setStock(quantity);
 
@@ -122,9 +134,40 @@ public ProductResponse updateStock(Long productId, Integer quantity) {
 }
 
     @Override
-public List<ProductResponse> getAllProducts() {
+public Page<ProductResponse> getAllProducts(String tenantName,
+                                            int page,
+                                            int size) {
 
-    List<Product> products = productRepository.findAll();
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<Product> products = productRepository.findByTenant(tenant, pageable);
+
+    return products.map(product -> {
+        ProductResponse response = new ProductResponse();
+        response.setProductId(product.getProductId());
+        response.setProductName(product.getProductName());
+        response.setDescription(product.getDescription());
+        response.setPrice(product.getPrice());
+        response.setStock(product.getStock());
+        response.setCategory(product.getCategory().getCategoryName());
+        response.setTenant(product.getTenant().getTenantName());
+        return response;
+    });
+}
+
+   @Override
+public List<ProductResponse> searchProducts(String tenantName, String keyword) {
+
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+
+    List<Product> products =
+            productRepository.findByTenantAndProductNameContainingIgnoreCase(
+                    tenant,
+                    keyword);
 
     return products.stream().map(product -> {
 
@@ -141,33 +184,18 @@ public List<ProductResponse> getAllProducts() {
     }).toList();
 }
 
-    @Override
-public List<ProductResponse> searchProducts(String keyword) {
+   @Override
+public List<ProductResponse> getProductsByCategory(String tenantName,
+                                                   Long categoryId) {
 
-    List<Product> products = productRepository.findByProductNameContainingIgnoreCase(keyword);
-
-    return products.stream().map(product -> {
-
-        ProductResponse response = new ProductResponse();
-        response.setProductId(product.getProductId());
-        response.setProductName(product.getProductName());
-        response.setDescription(product.getDescription());
-        response.setPrice(product.getPrice());
-        response.setStock(product.getStock());
-        response.setCategory(product.getCategory().getCategoryName());
-        response.setTenant(product.getTenant().getTenantName());
-
-        return response;
-    }).toList();
-}
-
-    @Override
-public List<ProductResponse> getProductsByCategory(Long categoryId) {
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Category category = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
-    List<Product> products = productRepository.findByCategory(category);
+    List<Product> products =
+            productRepository.findByTenantAndCategory(tenant, category);
 
     return products.stream().map(product -> {
 
@@ -184,26 +212,4 @@ public List<ProductResponse> getProductsByCategory(Long categoryId) {
     }).toList();
 }
 
-    @Override
-public List<ProductResponse> getProductsByTenant(Long tenantId) {
-
-    Tenant tenant = tenantRepository.findById(tenantId)
-            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
-
-    List<Product> products = productRepository.findByTenant(tenant);
-
-    return products.stream().map(product -> {
-
-        ProductResponse response = new ProductResponse();
-        response.setProductId(product.getProductId());
-        response.setProductName(product.getProductName());
-        response.setDescription(product.getDescription());
-        response.setPrice(product.getPrice());
-        response.setStock(product.getStock());
-        response.setCategory(product.getCategory().getCategoryName());
-        response.setTenant(product.getTenant().getTenantName());
-
-        return response;
-    }).toList();
-}
 }
