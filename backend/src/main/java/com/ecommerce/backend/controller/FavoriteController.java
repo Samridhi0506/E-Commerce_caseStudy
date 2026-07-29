@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
@@ -19,6 +21,7 @@ public class FavoriteController {
         this.favoriteService = favoriteService;
     }
 
+    @PreAuthorize("hasAnyRole('USER','TENANT')")
     @PostMapping("/{tenantName}/user/{userId}")
 public ResponseEntity<FavoriteResponse> addFavorite(
         @PathVariable String tenantName,
@@ -31,6 +34,7 @@ public ResponseEntity<FavoriteResponse> addFavorite(
     return new ResponseEntity<>(response, HttpStatus.CREATED);
 }
 
+    @PreAuthorize("hasAnyRole('USER','TENANT')")
     @GetMapping("/{tenantName}/user/{userId}")
 public ResponseEntity<List<FavoriteResponse>> getFavoritesByUser(
         @PathVariable String tenantName,
@@ -40,6 +44,7 @@ public ResponseEntity<List<FavoriteResponse>> getFavoritesByUser(
             favoriteService.getFavoritesByUser(tenantName, userId));
 }
 
+    @PreAuthorize("hasAnyRole('USER','TENANT')")
     @DeleteMapping("/{tenantName}/{favoriteId}")
 public ResponseEntity<String> removeFavorite(
         @PathVariable String tenantName,

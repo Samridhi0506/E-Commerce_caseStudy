@@ -14,6 +14,10 @@ import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.entity.Tenant;
 import com.ecommerce.backend.repository.TenantRepository;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
+
 import java.util.List;
 
 @Service
@@ -35,6 +39,38 @@ public class FavoriteServiceImpl implements FavoriteService {
     this.tenantRepository = tenantRepository;
 }
 
+private void validateUserAccess(Long userId) {
+
+    Authentication authentication =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    String username = authentication.getName();
+
+    User loggedInUser = userRepository.findByUsername(username)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("User not found"));
+
+    if (!loggedInUser.getUserId().equals(userId)) {
+        throw new AccessDeniedException("Access denied.");
+    }
+}
+
+private void validateFavoriteAccess(Favorite favorite) {
+
+    Authentication authentication =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    String username = authentication.getName();
+
+    User loggedInUser = userRepository.findByUsername(username)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("User not found"));
+
+    if (!favorite.getUser().getUserId().equals(loggedInUser.getUserId())) {
+        throw new AccessDeniedException("Access denied.");
+    }
+}
+
     @Override
 public FavoriteResponse addFavorite(String tenantName,
                                     Long userId,
@@ -42,6 +78,8 @@ public FavoriteResponse addFavorite(String tenantName,
 
     Tenant tenant = tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+
+    validateUserAccess(userId);
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -71,6 +109,8 @@ public List<FavoriteResponse> getFavoritesByUser(String tenantName,
     tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
+    validateUserAccess(userId);
+
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -94,9 +134,11 @@ public void removeFavorite(String tenantName,
 
     tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
-        
+
     Favorite favorite = favoriteRepository.findById(favoriteId)
             .orElseThrow(() -> new ResourceNotFoundException("Favorite not found"));
+
+    validateFavoriteAccess(favorite);
 
     favoriteRepository.delete(favorite);
 }
