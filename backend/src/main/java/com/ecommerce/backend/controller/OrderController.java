@@ -19,34 +19,43 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @PostMapping("/user/{userId}")
-    public ResponseEntity<OrderResponse> placeOrder(
-            @PathVariable Long userId,
-            @RequestBody CreateOrderRequest request) {
+   @PostMapping("/{tenantName}/user/{userId}")
+public ResponseEntity<OrderResponse> placeOrder(
+        @PathVariable String tenantName,
+        @PathVariable Long userId,
+        @RequestBody CreateOrderRequest request) {
 
-        OrderResponse response = orderService.placeOrder(userId, request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+    OrderResponse response =
+            orderService.placeOrder(tenantName, userId, request);
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<OrderResponse>> getOrdersByUser(
-            @PathVariable Long userId) {
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+}
 
-        return ResponseEntity.ok(orderService.getOrdersByUser(userId));
-    }
+    @GetMapping("/{tenantName}/user/{userId}")
+public ResponseEntity<List<OrderResponse>> getOrdersByUser(
+        @PathVariable String tenantName,
+        @PathVariable Long userId) {
 
-    @GetMapping("/{orderId}")
-    public ResponseEntity<OrderResponse> getOrderById(
-            @PathVariable Long orderId) {
+    return ResponseEntity.ok(
+            orderService.getOrdersByUser(tenantName, userId));
+}
 
-        return ResponseEntity.ok(orderService.getOrderById(orderId));
-    }
+    @GetMapping("/{tenantName}/{orderId}")
+public ResponseEntity<OrderResponse> getOrderById(
+        @PathVariable String tenantName,
+        @PathVariable Long orderId) {
 
-    @DeleteMapping("/{orderId}")
-    public ResponseEntity<String> cancelOrder(
-            @PathVariable Long orderId) {
+    return ResponseEntity.ok(
+            orderService.getOrderById(tenantName, orderId));
+}
 
-        orderService.cancelOrder(orderId);
-        return ResponseEntity.ok("Order cancelled successfully.");
-    }
+    @DeleteMapping("/{tenantName}/{orderId}")
+public ResponseEntity<String> cancelOrder(
+        @PathVariable String tenantName,
+        @PathVariable Long orderId) {
+
+    orderService.cancelOrder(tenantName, orderId);
+
+    return ResponseEntity.ok("Order cancelled successfully.");
+}
 }

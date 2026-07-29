@@ -14,6 +14,8 @@ import com.ecommerce.backend.service.OrderService;
 import org.springframework.stereotype.Service;
 import com.ecommerce.backend.exception.BadRequestException;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
+import com.ecommerce.backend.entity.Tenant;
+import com.ecommerce.backend.repository.TenantRepository;
 
 import java.util.List;
 
@@ -24,26 +26,35 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final TenantRepository tenantRepository;
 
     public OrderServiceImpl(OrderRepository orderRepository,
-                            OrderItemRepository orderItemRepository,
-                            ProductRepository productRepository,
-                            UserRepository userRepository) {
+                        OrderItemRepository orderItemRepository,
+                        ProductRepository productRepository,
+                        UserRepository userRepository,
+                        TenantRepository tenantRepository) {
 
-        this.orderRepository = orderRepository;
-        this.orderItemRepository = orderItemRepository;
-        this.productRepository = productRepository;
-        this.userRepository = userRepository;
-    }
+    this.orderRepository = orderRepository;
+    this.orderItemRepository = orderItemRepository;
+    this.productRepository = productRepository;
+    this.userRepository = userRepository;
+    this.tenantRepository = tenantRepository;
+}
 
     @Override
-public OrderResponse placeOrder(Long userId, CreateOrderRequest request) {
+public OrderResponse placeOrder(String tenantName,
+                                Long userId,
+                                CreateOrderRequest request){
+
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    Product product = productRepository.findById(request.getProductId())
-            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    Product product = productRepository
+        .findByProductIdAndTenant(request.getProductId(), tenant)
+        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     if (product.getStock() < request.getQuantity()) {
         throw new BadRequestException("Insufficient stock");
@@ -91,7 +102,11 @@ public OrderResponse placeOrder(Long userId, CreateOrderRequest request) {
 }
 
     @Override
-public List<OrderResponse> getOrdersByUser(Long userId) {
+public List<OrderResponse> getOrdersByUser(String tenantName,
+                                           Long userId) {
+
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -123,7 +138,11 @@ public List<OrderResponse> getOrdersByUser(Long userId) {
 }
 
     @Override
-public OrderResponse getOrderById(Long orderId) {
+public OrderResponse getOrderById(String tenantName,
+                                  Long orderId) {
+
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
@@ -149,7 +168,11 @@ public OrderResponse getOrderById(Long orderId) {
 }
 
     @Override
-public void cancelOrder(Long orderId) {
+public void cancelOrder(String tenantName,
+                        Long orderId) {
+
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order not found"));

@@ -7,11 +7,16 @@ import java.util.List;
 
 public interface OrderService {
 
-    OrderResponse placeOrder(Long userId, CreateOrderRequest request);
+    OrderResponse placeOrder(String tenantName,
+                             Long userId,
+                             CreateOrderRequest request);
 
-    List<OrderResponse> getOrdersByUser(Long userId);
+    List<OrderResponse> getOrdersByUser(String tenantName,
+                                        Long userId);
 
-    OrderResponse getOrderById(Long orderId);
+    OrderResponse getOrderById(String tenantName,
+                               Long orderId);
 
-    void cancelOrder(Long orderId);
+    void cancelOrder(String tenantName,
+                     Long orderId);
 }
