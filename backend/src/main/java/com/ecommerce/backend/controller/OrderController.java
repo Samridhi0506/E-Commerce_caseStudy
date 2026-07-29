@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
@@ -19,6 +21,7 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+   @PreAuthorize("hasAnyRole('USER','TENANT')")
    @PostMapping("/{tenantName}/user/{userId}")
 public ResponseEntity<OrderResponse> placeOrder(
         @PathVariable String tenantName,
@@ -31,6 +34,7 @@ public ResponseEntity<OrderResponse> placeOrder(
     return new ResponseEntity<>(response, HttpStatus.CREATED);
 }
 
+    @PreAuthorize("hasAnyRole('USER','TENANT')")
     @GetMapping("/{tenantName}/user/{userId}")
 public ResponseEntity<List<OrderResponse>> getOrdersByUser(
         @PathVariable String tenantName,
@@ -40,6 +44,7 @@ public ResponseEntity<List<OrderResponse>> getOrdersByUser(
             orderService.getOrdersByUser(tenantName, userId));
 }
 
+    @PreAuthorize("hasAnyRole('USER','TENANT')")
     @GetMapping("/{tenantName}/{orderId}")
 public ResponseEntity<OrderResponse> getOrderById(
         @PathVariable String tenantName,
@@ -49,6 +54,7 @@ public ResponseEntity<OrderResponse> getOrderById(
             orderService.getOrderById(tenantName, orderId));
 }
 
+    @PreAuthorize("hasAnyRole('USER','TENANT')")
     @DeleteMapping("/{tenantName}/{orderId}")
 public ResponseEntity<String> cancelOrder(
         @PathVariable String tenantName,

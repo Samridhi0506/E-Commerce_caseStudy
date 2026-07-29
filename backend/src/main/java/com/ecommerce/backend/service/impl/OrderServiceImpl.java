@@ -17,6 +17,10 @@ import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.entity.Tenant;
 import com.ecommerce.backend.repository.TenantRepository;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
+
 import java.util.List;
 
 @Service
@@ -41,6 +45,38 @@ public class OrderServiceImpl implements OrderService {
     this.tenantRepository = tenantRepository;
 }
 
+private void validateUserAccess(Long userId) {
+
+    Authentication authentication =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    String username = authentication.getName();
+
+    User loggedInUser = userRepository.findByUsername(username)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("User not found"));
+
+    if (!loggedInUser.getUserId().equals(userId)) {
+        throw new AccessDeniedException("Access denied.");
+    }
+}
+
+private void validateOrderAccess(Order order) {
+
+    Authentication authentication =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    String username = authentication.getName();
+
+    User loggedInUser = userRepository.findByUsername(username)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("User not found"));
+
+    if (!order.getUser().getUserId().equals(loggedInUser.getUserId())) {
+        throw new AccessDeniedException("Access denied.");
+    }
+}
+
     @Override
 public OrderResponse placeOrder(String tenantName,
                                 Long userId,
@@ -48,6 +84,8 @@ public OrderResponse placeOrder(String tenantName,
 
     Tenant tenant = tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+
+    validateUserAccess(userId);
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -108,6 +146,8 @@ public List<OrderResponse> getOrdersByUser(String tenantName,
     Tenant tenant = tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
+    validateUserAccess(userId);
+
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -147,6 +187,8 @@ public OrderResponse getOrderById(String tenantName,
     Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
+    validateOrderAccess(order);
+
     List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
 
     List<com.ecommerce.backend.dto.response.OrderItemResponse> items =
@@ -176,6 +218,8 @@ public void cancelOrder(String tenantName,
 
     Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+    validateOrderAccess(order);
 
     List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
 
