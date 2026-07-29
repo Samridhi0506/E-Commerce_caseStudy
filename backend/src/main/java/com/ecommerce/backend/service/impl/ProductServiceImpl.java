@@ -15,6 +15,12 @@ import com.ecommerce.backend.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.ecommerce.backend.entity.User;
+import com.ecommerce.backend.repository.UserRepository;
 
 import java.util.List;
 
@@ -24,17 +30,23 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final TenantRepository tenantRepository;
+    private final UserRepository userRepository;
 
     public ProductServiceImpl(ProductRepository productRepository,
-                              CategoryRepository categoryRepository,
-                              TenantRepository tenantRepository) {
-        this.productRepository = productRepository;
-        this.categoryRepository = categoryRepository;
-        this.tenantRepository = tenantRepository;
-    }
+                          CategoryRepository categoryRepository,
+                          TenantRepository tenantRepository,
+                          UserRepository userRepository) {
+
+    this.productRepository = productRepository;
+    this.categoryRepository = categoryRepository;
+    this.tenantRepository = tenantRepository;
+    this.userRepository = userRepository;
+}
 
     @Override
 public ProductResponse createProduct(String tenantName, CreateProductRequest request) {
+
+    validateTenantAccess(tenantName);
 
     Category category = categoryRepository.findById(request.getCategoryId())
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -66,6 +78,8 @@ public ProductResponse createProduct(String tenantName, CreateProductRequest req
 
     @Override
 public ProductResponse updateProduct(String tenantName,Long productId,UpdateProductRequest request) {
+
+    validateTenantAccess(tenantName);
 
     Tenant tenant = tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
@@ -99,6 +113,8 @@ Product product = productRepository.findByProductIdAndTenant(productId, tenant)
     @Override
 public void deleteProduct(String tenantName, Long productId){
 
+    validateTenantAccess(tenantName);
+
     Tenant tenant = tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
@@ -110,6 +126,8 @@ Product product = productRepository.findByProductIdAndTenant(productId, tenant)
 
     @Override
 public ProductResponse updateStock(String tenantName,Long productId,Integer quantity) {
+
+    validateTenantAccess(tenantName);
 
     Tenant tenant = tenantRepository.findByTenantName(tenantName)
         .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
@@ -210,6 +228,23 @@ public List<ProductResponse> getProductsByCategory(String tenantName,
 
         return response;
     }).toList();
+}
+
+private void validateTenantAccess(String tenantName) {
+
+    Authentication authentication =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    String username = authentication.getName();
+
+    User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    if (user.getTenant() == null ||
+            !user.getTenant().getTenantName().equals(tenantName)) {
+
+        throw new AccessDeniedException("Access denied.");
+    }
 }
 
 }

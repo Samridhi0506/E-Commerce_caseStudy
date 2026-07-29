@@ -31,6 +31,10 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
                     .collect(Collectors.toList());
         }
 
-        return new JwtAuthenticationToken(jwt, authorities);
+        return new JwtAuthenticationToken(
+        jwt,
+        authorities,
+        jwt.getClaimAsString("preferred_username")
+);
     }
 }
