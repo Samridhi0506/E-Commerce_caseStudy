@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
@@ -19,6 +21,7 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+    @PreAuthorize("hasRole('TENANT')")
     @PostMapping("/{tenantName}")
     public ResponseEntity<CategoryResponse> createCategory(
         @PathVariable String tenantName,
@@ -30,6 +33,7 @@ public class CategoryController {
     return new ResponseEntity<>(response, HttpStatus.CREATED);
 }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{tenantName}")
     public ResponseEntity<List<CategoryResponse>> getAllCategories(
         @PathVariable String tenantName) {
@@ -40,6 +44,7 @@ public class CategoryController {
     return ResponseEntity.ok(categories);
 }
 
+    @PreAuthorize("hasRole('TENANT')")
     @PutMapping("/{tenantName}/{categoryId}")
     public ResponseEntity<CategoryResponse> updateCategory(
         @PathVariable String tenantName,
@@ -52,6 +57,7 @@ public class CategoryController {
     return ResponseEntity.ok(response);
 }
 
+    @PreAuthorize("hasRole('TENANT')")
     @DeleteMapping("/{tenantName}/{categoryId}")
     public ResponseEntity<String> deleteCategory(
         @PathVariable String tenantName,
