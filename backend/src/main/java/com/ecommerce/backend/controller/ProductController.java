@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class ProductController {
         this.productService = productService;
     }
 
+    @PreAuthorize("hasRole('TENANT')")
     @PostMapping("/{tenantName}")
     public ResponseEntity<ProductResponse> createProduct(
         @PathVariable String tenantName,
@@ -32,18 +34,20 @@ public class ProductController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
 }
 
-   @GetMapping("/{tenantName}")
-public ResponseEntity<Page<ProductResponse>> getAllProducts(
-        @PathVariable String tenantName,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size) {
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/{tenantName}")
+    public ResponseEntity<Page<ProductResponse>> getAllProducts(
+            @PathVariable String tenantName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-    Page<ProductResponse> products =
-            productService.getAllProducts(tenantName, page, size);
+        Page<ProductResponse> products =
+                productService.getAllProducts(tenantName, page, size);
 
-    return ResponseEntity.ok(products);
-}
+        return ResponseEntity.ok(products);
+    }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{tenantName}/search")
     public ResponseEntity<List<ProductResponse>> searchProducts(
         @PathVariable String tenantName,
@@ -55,17 +59,19 @@ public ResponseEntity<Page<ProductResponse>> getAllProducts(
         return ResponseEntity.ok(products);
 }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{tenantName}/category/{categoryId}")
-public ResponseEntity<List<ProductResponse>> getProductsByCategory(
-        @PathVariable String tenantName,
-        @PathVariable Long categoryId) {
+    public ResponseEntity<List<ProductResponse>> getProductsByCategory(
+            @PathVariable String tenantName,
+            @PathVariable Long categoryId) {
 
-    List<ProductResponse> products =
-            productService.getProductsByCategory(tenantName, categoryId);
+        List<ProductResponse> products =
+                productService.getProductsByCategory(tenantName, categoryId);
 
-    return ResponseEntity.ok(products);
-}
+        return ResponseEntity.ok(products);
+    }
 
+    @PreAuthorize("hasRole('TENANT')")
     @PutMapping("/{tenantName}/{productId}")
 public ResponseEntity<ProductResponse> updateProduct(
         @PathVariable String tenantName,
@@ -78,6 +84,7 @@ public ResponseEntity<ProductResponse> updateProduct(
     return ResponseEntity.ok(response);
 }
 
+    @PreAuthorize("hasRole('TENANT')")
     @PatchMapping("/{tenantName}/{productId}/stock")
     public ResponseEntity<ProductResponse> updateStock(
         @PathVariable String tenantName,
@@ -90,6 +97,7 @@ public ResponseEntity<ProductResponse> updateProduct(
     return ResponseEntity.ok(response);
 }
 
+    @PreAuthorize("hasRole('TENANT')")
     @DeleteMapping("/{tenantName}/{productId}")
 public ResponseEntity<String> deleteProduct(
         @PathVariable String tenantName,
