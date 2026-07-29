@@ -27,9 +27,10 @@ public class SecurityConfig {
                 )
 
                 .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(Customizer.withDefaults())
-                )
-
+                        oauth2.jwt(jwt ->
+                                jwt.jwtAuthenticationConverter(new JwtAuthConverter())
+                        )
+)
                 .formLogin(form -> form.disable())
 
                 .httpBasic(httpBasic -> httpBasic.disable());
