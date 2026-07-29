@@ -24,6 +24,9 @@ import org.springframework.http.ResponseEntity;
 import java.net.URI;
 import java.util.List;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 @Service
 public class KeycloakServiceImpl implements KeycloakService {
 
@@ -116,6 +119,8 @@ public void registerUser(SignupRequest request) {
     String keycloakId = location.getPath()
             .substring(location.getPath().lastIndexOf("/") + 1);
 
+    assignRealmRole(keycloakId, "ROLE_USER");
+
     Role role = roleRepository.findByRoleName("ROLE_USER")
             .orElseThrow(() -> new RuntimeException("ROLE_USER not found."));
 
@@ -162,4 +167,87 @@ public LoginResponse login(LoginRequest request) {
 
     return loginResponse;
 }
+
+@Override
+public void assignRealmRole(String keycloakUserId, String roleName) {
+
+    String token = getAdminAccessToken();
+
+    List<Map<String, Object>> roles = restClient.get()
+            .uri(serverUrl + "/admin/realms/" + realm + "/roles")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+            .retrieve()
+            .body(List.class);
+
+    if (roles == null) {
+        throw new RuntimeException("Unable to fetch realm roles.");
+    }
+
+    Map<String, Object> selectedRole = null;
+
+    for (Map<String, Object> role : roles) {
+        if (roleName.equals(role.get("name"))) {
+            selectedRole = new HashMap<>();
+            selectedRole.put("id", role.get("id"));
+            selectedRole.put("name", role.get("name"));
+            break;
+        }
+    }
+
+    if (selectedRole == null) {
+        throw new RuntimeException(roleName + " not found in Keycloak.");
+    }
+
+    restClient.post()
+            .uri(serverUrl + "/admin/realms/" + realm
+                    + "/users/" + keycloakUserId
+                    + "/role-mappings/realm")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(new ArrayList<>(List.of(selectedRole)))
+            .retrieve()
+            .toBodilessEntity();
+}
+
+@Override
+public void removeRealmRole(String keycloakUserId, String roleName) {
+
+    String token = getAdminAccessToken();
+
+    List<Map<String, Object>> roles = restClient.get()
+            .uri(serverUrl + "/admin/realms/" + realm + "/roles")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+            .retrieve()
+            .body(List.class);
+
+    if (roles == null) {
+        throw new RuntimeException("Unable to fetch realm roles.");
+    }
+
+    Map<String, Object> selectedRole = null;
+
+    for (Map<String, Object> role : roles) {
+        if (roleName.equals(role.get("name"))) {
+            selectedRole = new HashMap<>();
+            selectedRole.put("id", role.get("id"));
+            selectedRole.put("name", role.get("name"));
+            break;
+        }
+    }
+
+    if (selectedRole == null) {
+        throw new RuntimeException(roleName + " not found in Keycloak.");
+    }
+
+    restClient.method(org.springframework.http.HttpMethod.DELETE)
+            .uri(serverUrl + "/admin/realms/" + realm
+                    + "/users/" + keycloakUserId
+                    + "/role-mappings/realm")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(List.of(selectedRole))
+            .retrieve()
+            .toBodilessEntity();
+}
+
 }
