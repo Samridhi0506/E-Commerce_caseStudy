@@ -11,6 +11,8 @@ import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.FavoriteService;
 import org.springframework.stereotype.Service;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
+import com.ecommerce.backend.entity.Tenant;
+import com.ecommerce.backend.repository.TenantRepository;
 
 import java.util.List;
 
@@ -20,24 +22,33 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final FavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final TenantRepository tenantRepository;
 
     public FavoriteServiceImpl(FavoriteRepository favoriteRepository,
-                               UserRepository userRepository,
-                               ProductRepository productRepository) {
+                           UserRepository userRepository,
+                           ProductRepository productRepository,
+                           TenantRepository tenantRepository) {
 
-        this.favoriteRepository = favoriteRepository;
-        this.userRepository = userRepository;
-        this.productRepository = productRepository;
-    }
+    this.favoriteRepository = favoriteRepository;
+    this.userRepository = userRepository;
+    this.productRepository = productRepository;
+    this.tenantRepository = tenantRepository;
+}
 
     @Override
-public FavoriteResponse addFavorite(Long userId, AddFavoriteRequest request) {
+public FavoriteResponse addFavorite(String tenantName,
+                                    Long userId,
+                                    AddFavoriteRequest request){
+
+    Tenant tenant = tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    Product product = productRepository.findById(request.getProductId())
-            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    Product product = productRepository
+        .findByProductIdAndTenant(request.getProductId(), tenant)
+        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
     Favorite favorite = new Favorite();
     favorite.setUser(user);
@@ -54,7 +65,11 @@ public FavoriteResponse addFavorite(Long userId, AddFavoriteRequest request) {
 }
 
     @Override
-public List<FavoriteResponse> getFavoritesByUser(Long userId) {
+public List<FavoriteResponse> getFavoritesByUser(String tenantName,
+                                                 Long userId) {
+
+    tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -74,8 +89,12 @@ public List<FavoriteResponse> getFavoritesByUser(Long userId) {
 }
 
     @Override
-public void removeFavorite(Long favoriteId) {
+public void removeFavorite(String tenantName,
+                           Long favoriteId) {
 
+    tenantRepository.findByTenantName(tenantName)
+        .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+        
     Favorite favorite = favoriteRepository.findById(favoriteId)
             .orElseThrow(() -> new ResourceNotFoundException("Favorite not found"));
 

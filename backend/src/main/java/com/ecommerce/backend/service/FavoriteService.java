@@ -7,9 +7,13 @@ import java.util.List;
 
 public interface FavoriteService {
 
-    FavoriteResponse addFavorite(Long userId, AddFavoriteRequest request);
+    FavoriteResponse addFavorite(String tenantName,
+                                 Long userId,
+                                 AddFavoriteRequest request);
 
-    List<FavoriteResponse> getFavoritesByUser(Long userId);
+    List<FavoriteResponse> getFavoritesByUser(String tenantName,
+                                              Long userId);
 
-    void removeFavorite(Long favoriteId);
+    void removeFavorite(String tenantName,
+                        Long favoriteId);
 }

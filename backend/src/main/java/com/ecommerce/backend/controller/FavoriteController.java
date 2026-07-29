@@ -19,27 +19,34 @@ public class FavoriteController {
         this.favoriteService = favoriteService;
     }
 
-    @PostMapping("/user/{userId}")
-    public ResponseEntity<FavoriteResponse> addFavorite(
-            @PathVariable Long userId,
-            @RequestBody AddFavoriteRequest request) {
+    @PostMapping("/{tenantName}/user/{userId}")
+public ResponseEntity<FavoriteResponse> addFavorite(
+        @PathVariable String tenantName,
+        @PathVariable Long userId,
+        @RequestBody AddFavoriteRequest request) {
 
-        FavoriteResponse response = favoriteService.addFavorite(userId, request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+    FavoriteResponse response =
+            favoriteService.addFavorite(tenantName, userId, request);
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<FavoriteResponse>> getFavoritesByUser(
-            @PathVariable Long userId) {
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+}
 
-        return ResponseEntity.ok(favoriteService.getFavoritesByUser(userId));
-    }
+    @GetMapping("/{tenantName}/user/{userId}")
+public ResponseEntity<List<FavoriteResponse>> getFavoritesByUser(
+        @PathVariable String tenantName,
+        @PathVariable Long userId) {
 
-    @DeleteMapping("/{favoriteId}")
-    public ResponseEntity<String> removeFavorite(
-            @PathVariable Long favoriteId) {
+    return ResponseEntity.ok(
+            favoriteService.getFavoritesByUser(tenantName, userId));
+}
 
-        favoriteService.removeFavorite(favoriteId);
-        return ResponseEntity.ok("Favorite removed successfully.");
-    }
+    @DeleteMapping("/{tenantName}/{favoriteId}")
+public ResponseEntity<String> removeFavorite(
+        @PathVariable String tenantName,
+        @PathVariable Long favoriteId) {
+
+    favoriteService.removeFavorite(tenantName, favoriteId);
+
+    return ResponseEntity.ok("Favorite removed successfully.");
+}
 }
