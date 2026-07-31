@@ -31,7 +31,7 @@ public class TenantController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<TenantResponse>> getAllTenants() {
 
         return ResponseEntity.ok(tenantService.getAllTenants());

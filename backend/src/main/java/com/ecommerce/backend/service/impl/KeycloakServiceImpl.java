@@ -135,7 +135,43 @@ public void registerUser(SignupRequest request) {
     userRepository.save(appUser);
 }
 
-    @Override
+//     @Override
+// public LoginResponse login(LoginRequest request) {
+
+//     Map<String, Object> response = restClient.post()
+//             .uri(serverUrl + "/realms/" + realm + "/protocol/openid-connect/token")
+//             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+//             .body(
+//                     "grant_type=password" +
+//                     "&client_id=" + clientId +
+//                     "&client_secret=" + clientSecret +
+//                     "&username=" + request.getUsername() +
+//                     "&password=" + request.getPassword()
+//             )
+//             .retrieve()
+// .onStatus(HttpStatusCode::isError, (req, res) -> {
+//     String body = new String(res.getBody().readAllBytes());
+//     throw new RuntimeException(
+//         "Keycloak Error: " + res.getStatusCode() + " - " + body
+//     );
+// })              
+//             .body(Map.class);
+
+//     if (response == null || response.get("access_token") == null) {
+//         throw new RuntimeException("Failed to login.");
+//     }
+
+//     LoginResponse loginResponse = new LoginResponse();
+//     loginResponse.setAccessToken(response.get("access_token").toString());
+//     loginResponse.setRefreshToken(response.get("refresh_token").toString());
+//     loginResponse.setExpiresIn(
+//             ((Number) response.get("expires_in")).longValue()
+//     );
+
+//     return loginResponse;
+// }
+
+@Override
 public LoginResponse login(LoginRequest request) {
 
     Map<String, Object> response = restClient.post()
@@ -150,7 +186,10 @@ public LoginResponse login(LoginRequest request) {
             )
             .retrieve()
             .onStatus(HttpStatusCode::isError, (req, res) -> {
-                throw new RuntimeException("Invalid username or password.");
+                String body = new String(res.getBody().readAllBytes());
+                throw new RuntimeException(
+                        "Keycloak Error: " + res.getStatusCode() + " - " + body
+                );
             })
             .body(Map.class);
 
@@ -158,12 +197,36 @@ public LoginResponse login(LoginRequest request) {
         throw new RuntimeException("Failed to login.");
     }
 
+    // ================= NEW CODE STARTS HERE =================
+
+    User user = userRepository.findByUsername(request.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found in database."));
+
+    // ================= NEW CODE ENDS HERE =================
+
     LoginResponse loginResponse = new LoginResponse();
+
     loginResponse.setAccessToken(response.get("access_token").toString());
     loginResponse.setRefreshToken(response.get("refresh_token").toString());
-    loginResponse.setExpiresIn(
-            ((Number) response.get("expires_in")).longValue()
-    );
+    loginResponse.setExpiresIn(((Number) response.get("expires_in")).longValue());
+
+    // ================= SET EXTRA DETAILS =================
+
+    loginResponse.setUserId(user.getUserId());
+    loginResponse.setUsername(user.getUsername());
+    loginResponse.setRole(user.getRole().getRoleName());
+
+    // if (user.getTenant() != null) {
+    //     loginResponse.setTenantName(user.getTenant().getTenantName());
+    // } else {
+    //     loginResponse.setTenantName(null);
+    // }
+
+    loginResponse.setTenantName(
+    user.getTenant() != null
+        ? user.getTenant().getTenantName()
+        : null
+);
 
     return loginResponse;
 }

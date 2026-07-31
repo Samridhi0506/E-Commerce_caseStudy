@@ -9,7 +9,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const rawAuth = localStorage.getItem("authData");
+    const token = rawAuth ? JSON.parse(rawAuth).accessToken : null;
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -18,6 +19,25 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("authData");
+
+      // Prevent redirect loop on login/signup pages
+      if (
+        window.location.pathname !== "/login" &&
+        window.location.pathname !== "/signup"
+      ) {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 export default api;

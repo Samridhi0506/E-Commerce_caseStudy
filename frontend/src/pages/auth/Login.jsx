@@ -31,22 +31,19 @@ function Login() {
     try {
       const response = await loginUser(formData);
 
-      login(response.data.accessToken);
+      console.log("LOGIN RESPONSE");
+console.log(response.data);
 
-      localStorage.setItem(
-        "refreshToken",
-        response.data.refreshToken
-      );
+      login(response.data);
 
       toast.success("Login successful!");
 
       setTimeout(() => {
         navigate("/");
       }, 1000);
-
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Invalid username or password."
+        error.response?.data?.message || "Unable to connect to server."
       );
     } finally {
       setLoading(false);

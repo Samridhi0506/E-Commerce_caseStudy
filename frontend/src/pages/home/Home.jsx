@@ -1,51 +1,71 @@
-import { Button, Card, Col, Container, Row } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Alert, Col, Container, Row, Spinner } from "react-bootstrap";
+import { getTenants } from "../../services/tenantService";
+import TenantCard from "../../components/ui/TenantCard";
 
 function Home() {
+
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadTenants();
+  }, []);
+
+  const loadTenants = async () => {
+
+    try {
+
+      const response = await getTenants();
+
+      setTenants(response.data);
+
+    } catch (err) {
+
+      setError("Unable to load stores.");
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <Alert variant="danger">{error}</Alert>;
+  }
+
   return (
-    <Container>
+    <Container className="mt-4">
 
-      <Card className="text-center shadow-lg p-5 border-0">
+      <h2 className="text-center mb-4">
+        Explore Stores
+      </h2>
 
-        <h1>Welcome to E-Commerce</h1>
+      <Row>
 
-        <p className="mt-3">
-          Buy and manage products across multiple tenants.
-        </p>
+        {tenants.map((tenant) => (
 
-        <Button size="lg">
-          Explore Products
-        </Button>
+          <Col
+            key={tenant.tenantId}
+            lg={4}
+            md={6}
+            className="mb-4"
+          >
+            <TenantCard tenant={tenant} />
+          </Col>
 
-      </Card>
-
-      <Row className="mt-5">
-
-        <Col md={4}>
-          <Card className="shadow-sm">
-            <Card.Body>
-              <h4>Products</h4>
-              <p>Browse available products.</p>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={4}>
-          <Card className="shadow-sm">
-            <Card.Body>
-              <h4>Orders</h4>
-              <p>Track your orders.</p>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={4}>
-          <Card className="shadow-sm">
-            <Card.Body>
-              <h4>Favorites</h4>
-              <p>Save your favourite products.</p>
-            </Card.Body>
-          </Card>
-        </Col>
+        ))}
 
       </Row>
 
