@@ -23,4 +23,7 @@ public interface ProductService {
 
     List<ProductResponse> getProductsByCategory(String tenantName, Long categoryId);
 
+    Page<ProductResponse> getMarketplaceProducts(int page, int size);
+
+    ProductResponse getProductById(Long productId);
 }

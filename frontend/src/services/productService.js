@@ -1,5 +1,15 @@
 import api from "./api";
 
+export const getMarketplaceProducts = async (page = 0, size = 12) => {
+  return await api.get("/products", {
+    params: { page, size },
+  });
+};
+
+export const getProductById = async (productId) => {
+  return await api.get(`/products/details/${productId}`);
+};
+
 export const getProducts = async (tenantName, page = 0, size = 10) => {
   return await api.get(`/products/${tenantName}`, {
     params: { page, size },

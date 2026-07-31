@@ -22,6 +22,18 @@ public class ProductController {
         this.productService = productService;
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping
+    public ResponseEntity<Page<ProductResponse>> getMarketplaceProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+
+        return ResponseEntity.ok(
+                productService.getMarketplaceProducts(page, size)
+        );
+    }
+
+
     @PreAuthorize("hasRole('TENANT')")
     @PostMapping("/{tenantName}")
     public ResponseEntity<ProductResponse> createProduct(
@@ -106,5 +118,15 @@ public ResponseEntity<String> deleteProduct(
     productService.deleteProduct(tenantName, productId);
 
     return ResponseEntity.ok("Product deleted successfully.");
+}
+
+@PreAuthorize("isAuthenticated()")
+@GetMapping("/details/{productId}")
+public ResponseEntity<ProductResponse> getProductById(
+        @PathVariable Long productId) {
+
+    return ResponseEntity.ok(
+            productService.getProductById(productId)
+    );
 }
 }

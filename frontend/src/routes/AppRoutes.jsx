@@ -11,6 +11,7 @@ import OrdersPage from "../pages/order/OrdersPage";
 import TenantDashboard from "../pages/tenant/TenantDashboard";
 import ManageProducts from "../pages/tenant/ManageProducts";
 import ProtectedRoute from "./ProtectedRoute";
+import ProductDetails from "../pages/product/ProductDetails";
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -38,6 +39,15 @@ function AppRoutes() {
   element={
     <ProtectedRoute>
       <Home />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/product/:productId"
+  element={
+    <ProtectedRoute>
+      <ProductDetails />
     </ProtectedRoute>
   }
 />

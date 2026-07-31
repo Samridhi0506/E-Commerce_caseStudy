@@ -30,7 +30,6 @@ function NavbarComponent() {
 
         <Navbar.Collapse>
           <Nav className="ms-auto">
-
             {isAuthenticated ? (
               <>
                 <Nav.Link as={Link} to="/">
@@ -38,9 +37,15 @@ function NavbarComponent() {
                 </Nav.Link>
 
                 {hasAnyRole(["ROLE_TENANT"]) && (
-                  <Nav.Link as={Link} to="/dashboard">
-                    Dashboard
-                  </Nav.Link>
+                  <>
+                    <Nav.Link as={Link} to="/dashboard">
+                      Dashboard
+                    </Nav.Link>
+
+                    <Nav.Link as={Link} to="/tenant/products">
+                      Products
+                    </Nav.Link>
+                  </>
                 )}
 
                 <Nav.Link as={Link} to="/favorites">
@@ -66,7 +71,6 @@ function NavbarComponent() {
                 </Nav.Link>
               </>
             )}
-
           </Nav>
         </Navbar.Collapse>
       </Container>

@@ -247,4 +247,44 @@ private void validateTenantAccess(String tenantName) {
     }
 }
 
+@Override
+public Page<ProductResponse> getMarketplaceProducts(int page, int size) {
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<Product> products = productRepository.findAll(pageable);
+
+    return products.map(product -> {
+        ProductResponse response = new ProductResponse();
+
+        response.setProductId(product.getProductId());
+        response.setProductName(product.getProductName());
+        response.setDescription(product.getDescription());
+        response.setPrice(product.getPrice());
+        response.setStock(product.getStock());
+        response.setCategory(product.getCategory().getCategoryName());
+        response.setTenant(product.getTenant().getTenantName());
+
+        return response;
+    });
+}
+
+@Override
+public ProductResponse getProductById(Long productId) {
+
+    Product product = productRepository.findById(productId)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Product not found"));
+
+    ProductResponse response = new ProductResponse();
+    response.setProductId(product.getProductId());
+    response.setProductName(product.getProductName());
+    response.setDescription(product.getDescription());
+    response.setPrice(product.getPrice());
+    response.setStock(product.getStock());
+    response.setCategory(product.getCategory().getCategoryName());
+    response.setTenant(product.getTenant().getTenantName());
+
+    return response;
+}
 }

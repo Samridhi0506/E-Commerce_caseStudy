@@ -111,13 +111,15 @@ if (categoryList.length > 0) {
 
 const handleEdit = (product) => {
   setEditingProductId(product.productId);
+
   setProductName(product.productName);
   setDescription(product.description);
   setPrice(product.price);
   setStock(product.stock);
 
+  // Find the category from dropdown list
   const selectedCategory = categories.find(
-    (c) => c.categoryName === product.category
+    (category) => category.categoryName === product.category
   );
 
   if (selectedCategory) {
@@ -131,11 +133,11 @@ const handleEdit = (product) => {
 };
 
 const handleDelete = async (productId) => {
-  const confirmDelete = window.confirm(
+  const confirmed = window.confirm(
     "Are you sure you want to delete this product?"
   );
 
-  if (!confirmDelete) return;
+  if (!confirmed) return;
 
   try {
     await deleteProduct(tenantName, productId);
@@ -215,6 +217,7 @@ if (loading) {
           </Form.Select>
         </Form.Group>
         <Button
+          variant="primary"
           onClick={handleSubmit}
           disabled={categories.length === 0}
         >
@@ -225,7 +228,6 @@ if (loading) {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>ID</th>
             <th>Name</th>
             <th>Description</th>
             <th>Price</th>
@@ -237,31 +239,29 @@ if (loading) {
         <tbody>
           {products.map((product) => (
             <tr key={product.productId}>
-              <td>{product.productId}</td>
               <td>{product.productName}</td>
               <td>{product.description}</td>
               <td>{product.price}</td>
               <td>{product.stock}</td>
               <td>{product.category}</td>
+              <td>
+              <Button
+                variant="warning"
+                size="sm"
+                className="me-2"
+                onClick={() => handleEdit(product)}
+              >
+                Edit
+              </Button>
 
-<td>
-  <Button
-    variant="warning"
-    size="sm"
-    className="me-2"
-    onClick={() => handleEdit(product)}
-  >
-    Edit
-  </Button>
-
-  <Button
-    variant="danger"
-    size="sm"
-    onClick={() => handleDelete(product.productId)}
-  >
-    Delete
-  </Button>
-</td>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => handleDelete(product.productId)}
+              >
+                Delete
+              </Button>
+            </td>
             </tr>
           ))}
         </tbody>
