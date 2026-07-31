@@ -9,9 +9,11 @@ import {
 
 import { getTenants } from "../../services/tenantService";
 import { getMarketplaceProducts } from "../../services/productService";
-
+import { getFavorites } from "../../services/favoriteService";
 import TenantCard from "../../components/ui/TenantCard";
 import ProductCard from "../../components/ui/ProductCard";
+import { useAuth } from "../../context/AuthContext";
+
 
 function Home() {
   const [products, setProducts] = useState([]);
@@ -20,26 +22,58 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const { userId, tenantName } = useAuth();
+
+const handleFavoriteToggle = (productId) => {
+  console.log("Toggling:", productId);
+
+  setProducts((prevProducts) =>
+    prevProducts.map((product) =>
+      product.productId === productId
+        ? {
+            ...product,
+            isFavorite: !product.isFavorite,
+          }
+        : product
+    )
+  );
+};
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    try {
-      const [productsResponse, tenantsResponse] = await Promise.all([
-        getMarketplaceProducts(),
-        getTenants(),
-      ]);
+  try {
+    const [productsResponse, tenantsResponse] = await Promise.all([
+      getMarketplaceProducts(),
+      getTenants(),
+    ]);
 
-      setProducts(productsResponse.data.content);
-      setTenants(tenantsResponse.data);
-    } catch (err) {
-      console.error(err);
-      setError("Unable to load marketplace.");
-    } finally {
-      setLoading(false);
+    let updatedProducts = productsResponse.data.content;
+
+    if (userId && tenantName) {
+      const favoritesResponse = await getFavorites(tenantName, userId);
+
+      const favoriteIds = new Set(
+        favoritesResponse.data.map((favorite) => favorite.productId)
+      );
+
+      updatedProducts = updatedProducts.map((product) => ({
+        ...product,
+        isFavorite: favoriteIds.has(product.productId),
+      }));
     }
-  };
+
+    setProducts(updatedProducts);
+    setTenants(tenantsResponse.data);
+  } catch (err) {
+    console.error(err);
+    setError("Unable to load marketplace.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) {
     return (
@@ -75,7 +109,10 @@ function Home() {
               md={6}
               className="mb-4"
             >
-              <ProductCard product={product} />
+              <ProductCard
+    product={product}
+    onFavoriteToggle={handleFavoriteToggle}
+/>
             </Col>
           ))
         )}

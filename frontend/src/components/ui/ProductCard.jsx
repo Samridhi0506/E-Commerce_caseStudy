@@ -1,22 +1,45 @@
 import { Badge, Button, Card } from "react-bootstrap";
 import { FaHeart, FaShoppingCart, FaEye } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { addFavorite } from "../../services/favoriteService";
+import { toast } from "react-toastify";
 
-function ProductCard({ product }) {
+function ProductCard({ product, onFavoriteToggle }) {
 
+  const { userId, tenantName } = useAuth();
   const navigate = useNavigate();
 
+  const isFavorite = product.isFavorite;
+
+  const handleAddFavorite = async () => {
+    try {
+      await addFavorite(
+        tenantName,
+        userId,
+        product.productId
+      );
+
+      onFavoriteToggle(product.productId);
+
+      toast.success(
+        isFavorite
+          ? "Removed from favorites!"
+          : "Added to favorites!"
+      );
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+        "Unable to update favorite."
+      );
+    }
+  };
+
   return (
-    <Card
-      className="h-100 shadow-sm border-0"
-      style={{
-        borderRadius: "16px",
-      }}
-    >
+    <Card className="h-100 shadow-sm border-0" style={{ borderRadius: "16px" }}>
       <Card.Body className="d-flex flex-column">
 
         <div className="d-flex justify-content-between align-items-start">
-
           <Card.Title className="fw-bold fs-5 mb-0">
             {product.productName}
           </Card.Title>
@@ -24,14 +47,11 @@ function ProductCard({ product }) {
           <Badge bg="primary">
             {product.category}
           </Badge>
-
         </div>
 
         <Card.Text
           className="text-muted mt-3"
-          style={{
-            minHeight: "70px",
-          }}
+          style={{ minHeight: "70px" }}
         >
           {product.description}
         </Card.Text>
@@ -44,13 +64,17 @@ function ProductCard({ product }) {
 
           <div className="mb-3">
             {product.stock > 10 ? (
-              <Badge bg="success">In Stock ({product.stock})</Badge>
+              <Badge bg="success">
+                In Stock ({product.stock})
+              </Badge>
             ) : product.stock > 0 ? (
               <Badge bg="warning" text="dark">
                 Low Stock ({product.stock})
               </Badge>
             ) : (
-              <Badge bg="danger">Out of Stock</Badge>
+              <Badge bg="danger">
+                Out of Stock
+              </Badge>
             )}
           </div>
 
@@ -58,7 +82,9 @@ function ProductCard({ product }) {
 
             <Button
               variant="primary"
-              onClick={() => navigate(`/product/${product.productId}`)}
+              onClick={() =>
+                navigate(`/product/${product.productId}`)
+              }
             >
               <FaEye className="me-2" />
               View Details
@@ -69,12 +95,17 @@ function ProductCard({ product }) {
               disabled={product.stock === 0}
             >
               <FaShoppingCart className="me-2" />
-              {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+              {product.stock === 0
+                ? "Out of Stock"
+                : "Add to Cart"}
             </Button>
 
-            <Button variant="outline-danger">
+            <Button
+              variant={isFavorite ? "danger" : "outline-danger"}
+              onClick={handleAddFavorite}
+            >
               <FaHeart className="me-2" />
-              Add to Favorites
+              {isFavorite ? "Favorited" : "Add to Favorites"}
             </Button>
 
           </div>
