@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Button, Container, Form, Spinner, Table } from "react-bootstrap";
-import { getProducts, createProduct } from "../../services/productService";
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} from "../../services/productService";
 import { useAuth } from "../../context/AuthContext";
 import { getCategories } from "../../services/categoryService";
 import { toast, ToastContainer } from "react-toastify";
@@ -15,7 +20,14 @@ function ManageProducts() {
   const [stock, setStock] = useState(0);
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
+  const [editingProductId, setEditingProductId] = useState(null);
   const { tenantName } = useAuth();
+
+
+  const loadProducts = async () => {
+  const response = await getProducts(tenantName);
+  setProducts(response.data.content || []);
+};
 
   useEffect(() => {
   if (!tenantName) return;
@@ -27,7 +39,8 @@ function ManageProducts() {
   getCategories(tenantName),
 ]);
 
-setProducts(productResponse.data.content || []);
+const productList = productResponse.data.content || [];
+setProducts(productList);
 
 const categoryList = categoryResponse.data || [];
 setCategories(categoryList);
@@ -47,7 +60,7 @@ if (categoryList.length > 0) {
   fetchData();
 }, [tenantName]);
 
-  const handleCreate = async () => {
+  const handleSubmit = async () => {
   try {
 
     if (!categoryId) {
@@ -55,18 +68,29 @@ if (categoryList.length > 0) {
     return;
 }
 
-    await createProduct(tenantName, {
-      productName,
-      description,
-      price,
-      stock,
-      categoryId: Number(categoryId),
-    });
+    if (editingProductId) {
+  await updateProduct(tenantName, editingProductId, {
+    productName,
+    description,
+    price,
+    stock,
+    categoryId: Number(categoryId),
+  });
 
-    toast.success("Product created successfully.");
+  toast.success("Product updated successfully.");
+} else {
+  await createProduct(tenantName, {
+    productName,
+    description,
+    price,
+    stock,
+    categoryId: Number(categoryId),
+  });
 
-    const response = await getProducts(tenantName);
-    setProducts(response.data.content || []);
+  toast.success("Product created successfully.");
+}
+
+    await loadProducts();
 
     setProductName("");
     setDescription("");
@@ -77,9 +101,51 @@ if (categoryList.length > 0) {
       setCategoryId(categories[0].categoryId);
     }
 
+    setEditingProductId(null);
+
   } catch (error) {
     console.error(error);
     toast.error("Unable to create product.");
+  }
+};
+
+const handleEdit = (product) => {
+  setEditingProductId(product.productId);
+  setProductName(product.productName);
+  setDescription(product.description);
+  setPrice(product.price);
+  setStock(product.stock);
+
+  const selectedCategory = categories.find(
+    (c) => c.categoryName === product.category
+  );
+
+  if (selectedCategory) {
+    setCategoryId(selectedCategory.categoryId.toString());
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
+
+const handleDelete = async (productId) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this product?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    await deleteProduct(tenantName, productId);
+
+    toast.success("Product deleted successfully.");
+
+    await loadProducts();
+  } catch (error) {
+    console.error(error);
+    toast.error("Unable to delete product.");
   }
 };
 
@@ -148,7 +214,12 @@ if (loading) {
             ))}
           </Form.Select>
         </Form.Group>
-        <Button onClick={handleCreate}>Create Product</Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={categories.length === 0}
+        >
+          {editingProductId ? "Update Product" : "Create Product"}
+        </Button>
       </Form>
 
       <Table striped bordered hover>
@@ -160,6 +231,7 @@ if (loading) {
             <th>Price</th>
             <th>Stock</th>
             <th>Category</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -171,6 +243,25 @@ if (loading) {
               <td>{product.price}</td>
               <td>{product.stock}</td>
               <td>{product.category}</td>
+
+<td>
+  <Button
+    variant="warning"
+    size="sm"
+    className="me-2"
+    onClick={() => handleEdit(product)}
+  >
+    Edit
+  </Button>
+
+  <Button
+    variant="danger"
+    size="sm"
+    onClick={() => handleDelete(product.productId)}
+  >
+    Delete
+  </Button>
+</td>
             </tr>
           ))}
         </tbody>
