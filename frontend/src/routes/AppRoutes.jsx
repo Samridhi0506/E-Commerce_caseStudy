@@ -12,6 +12,7 @@ import TenantDashboard from "../pages/tenant/TenantDashboard";
 import ManageProducts from "../pages/tenant/ManageProducts";
 import ProtectedRoute from "./ProtectedRoute";
 import ProductDetails from "../pages/product/ProductDetails";
+import CartPage from "../pages/cart/CartPage";
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -25,6 +26,15 @@ function AppRoutes() {
           isAuthenticated ? <Navigate to="/" replace /> : <Login />
         }
       />
+
+      <Route
+  path="/cart"
+  element={
+    <ProtectedRoute roles={["ROLE_USER", "ROLE_TENANT"]}>
+      <CartPage />
+    </ProtectedRoute>
+  }
+/>
 
       <Route
         path="/signup"

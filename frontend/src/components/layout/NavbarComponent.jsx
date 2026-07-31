@@ -1,6 +1,8 @@
-import { Container, Nav, Navbar } from "react-bootstrap";
+import { Badge, Container, Nav, Navbar } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
+import { FaShoppingCart } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
 
 function NavbarComponent() {
   const navigate = useNavigate();
@@ -11,13 +13,20 @@ function NavbarComponent() {
     logout,
   } = useAuth();
 
+  const { cartCount } = useCart();
+
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
+    <Navbar
+      bg="dark"
+      variant="dark"
+      expand="lg"
+      sticky="top"
+    >
       <Container>
         <Navbar.Brand
           as={Link}
@@ -29,7 +38,7 @@ function NavbarComponent() {
         <Navbar.Toggle />
 
         <Navbar.Collapse>
-          <Nav className="ms-auto">
+          <Nav className="ms-auto align-items-center">
             {isAuthenticated ? (
               <>
                 <Nav.Link as={Link} to="/">
@@ -56,7 +65,26 @@ function NavbarComponent() {
                   Orders
                 </Nav.Link>
 
-                <Nav.Link onClick={handleLogout} role="button">
+                <Nav.Link as={Link} to="/cart">
+                  <FaShoppingCart className="me-1" />
+
+                  Cart
+
+                  {cartCount > 0 && (
+                    <Badge
+                      bg="danger"
+                      pill
+                      className="ms-2"
+                    >
+                      {cartCount}
+                    </Badge>
+                  )}
+                </Nav.Link>
+
+                <Nav.Link
+                  onClick={handleLogout}
+                  role="button"
+                >
                   Logout
                 </Nav.Link>
               </>

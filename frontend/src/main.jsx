@@ -7,13 +7,16 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "react-toastify/dist/ReactToastify.css";
 
 import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
 
 import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <AuthProvider>
+      <CartProvider>
         <App />
+      </CartProvider>
     </AuthProvider>
-</BrowserRouter>
+  </BrowserRouter>
 );
