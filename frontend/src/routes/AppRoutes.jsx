@@ -10,9 +10,14 @@ import FavoritesPage from "../pages/favorite/FavoritesPage";
 import OrdersPage from "../pages/order/OrdersPage";
 import TenantDashboard from "../pages/tenant/TenantDashboard";
 import ManageProducts from "../pages/tenant/ManageProducts";
+import TenantOrders from "../pages/tenant/TenantOrders";
 import ProtectedRoute from "./ProtectedRoute";
 import ProductDetails from "../pages/product/ProductDetails";
 import CartPage from "../pages/cart/CartPage";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import AdminTenants from "../pages/admin/AdminTenants";
+import AdminCategories from "../pages/admin/AdminCategories";
+import AdminUsers from "../pages/admin/AdminUsers";
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -66,7 +71,7 @@ function AppRoutes() {
       <Route
         path="/products/:tenantName"
         element={
-          <ProtectedRoute roles={["ROLE_USER", "ROLE_TENANT"]}>
+          <ProtectedRoute roles={["ROLE_USER", "ROLE_TENANT", "ROLE_ADMIN"]}>
             <ProductsPage />
           </ProtectedRoute>
         }
@@ -109,10 +114,55 @@ function AppRoutes() {
       />
 
       <Route
+        path="/admin"
+        element={
+          <ProtectedRoute roles={["ROLE_ADMIN"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/tenants"
+        element={
+          <ProtectedRoute roles={["ROLE_ADMIN"]}>
+            <AdminTenants />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/categories"
+        element={
+          <ProtectedRoute roles={["ROLE_ADMIN"]}>
+            <AdminCategories />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute roles={["ROLE_ADMIN"]}>
+            <AdminUsers />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/tenant/products"
         element={
           <ProtectedRoute roles={["ROLE_TENANT"]}>
             <ManageProducts />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/tenant/orders"
+        element={
+          <ProtectedRoute roles={["ROLE_TENANT"]}>
+            <TenantOrders />
           </ProtectedRoute>
         }
       />

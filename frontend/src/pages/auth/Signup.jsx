@@ -90,13 +90,6 @@ function Signup() {
               onChange={handleChange}
               required
             />
-
-            <Form.Check
-              className="mt-2"
-              label="Show Password"
-              checked={showPassword}
-              onChange={() => setShowPassword(!showPassword)}
-            />
           </Form.Group>
 
           <Button

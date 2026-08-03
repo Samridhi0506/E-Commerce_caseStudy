@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Button, Container, Form, Spinner, Table } from "react-bootstrap";
+import { Button, Col, Container, Form, Row, Spinner, Table } from "react-bootstrap";
 import {
   getProducts,
+  getProductsByCategory,
+  searchProducts,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -10,9 +12,11 @@ import { useAuth } from "../../context/AuthContext";
 import { getCategories } from "../../services/categoryService";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import FixedPagination from "../../components/common/FixedPagination";
 
 function ManageProducts() {
   const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
@@ -21,44 +25,81 @@ function ManageProducts() {
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategoryId, setFilterCategoryId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 8;
   const { tenantName } = useAuth();
 
 
-  const loadProducts = async () => {
-  const response = await getProducts(tenantName);
-  setProducts(response.data.content || []);
-};
-
-  useEffect(() => {
-  if (!tenantName) return;
-
-  const fetchData = async () => {
+  const loadProducts = async (page = 0, query = "", filterCatId = "") => {
     try {
-      const [productResponse, categoryResponse] = await Promise.all([
-  getProducts(tenantName),
-  getCategories(tenantName),
-]);
+      if (query.trim()) {
+        const response = await searchProducts(tenantName, query.trim());
+        const results = response.data || [];
+        setAllProducts(results);
+        const pageItems = results.slice(page * itemsPerPage, page * itemsPerPage + itemsPerPage);
+        setProducts(pageItems);
+        setTotalPages(Math.max(Math.ceil(results.length / itemsPerPage), 1));
+        setCurrentPage(page + 1);
+        return;
+      }
 
-const productList = productResponse.data.content || [];
-setProducts(productList);
+      if (filterCatId) {
+        const response = await getProductsByCategory(tenantName, Number(filterCatId));
+        const filteredItems = response.data || [];
+        setAllProducts(filteredItems);
+        const pageItems = filteredItems.slice(page * itemsPerPage, page * itemsPerPage + itemsPerPage);
+        setProducts(pageItems);
+        setTotalPages(Math.max(Math.ceil(filteredItems.length / itemsPerPage), 1));
+        setCurrentPage(page + 1);
+        return;
+      }
 
-const categoryList = categoryResponse.data || [];
-setCategories(categoryList);
-
-// Automatically select the first category
-if (categoryList.length > 0) {
-  setCategoryId(categoryList[0].categoryId);
-}
+      const response = await getProducts(tenantName, page, itemsPerPage);
+      const payload = response.data;
+      const pageContent = payload.content || [];
+      setProducts(pageContent);
+      setAllProducts([]);
+      setTotalPages(payload.totalPages ?? Math.max(Math.ceil(pageContent.length / itemsPerPage), 1));
+      setCurrentPage(page + 1);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load data.");
-    } finally {
-      setLoading(false);
+      toast.error("Failed to load products.");
     }
   };
 
-  fetchData();
-}, [tenantName]);
+  useEffect(() => {
+    if (!tenantName) return;
+
+    const fetchData = async () => {
+      try {
+        const [productResponse, categoryResponse] = await Promise.all([
+          getProducts(tenantName, 0, itemsPerPage),
+          getCategories(tenantName),
+        ]);
+
+        const productList = productResponse.data.content || [];
+        setProducts(productList);
+        setTotalPages(productResponse.data.totalPages || 1);
+
+        const categoryList = categoryResponse.data || [];
+        setCategories(categoryList);
+
+        if (categoryList.length > 0) {
+          setCategoryId(categoryList[0].categoryId);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [tenantName]);
 
   const handleSubmit = async () => {
   try {
@@ -117,7 +158,6 @@ const handleEdit = (product) => {
   setPrice(product.price);
   setStock(product.stock);
 
-  // Find the category from dropdown list
   const selectedCategory = categories.find(
     (category) => category.categoryName === product.category
   );
@@ -144,7 +184,7 @@ const handleDelete = async (productId) => {
 
     toast.success("Product deleted successfully.");
 
-    await loadProducts();
+    await loadProducts(currentPage - 1, searchQuery, filterCategoryId);
   } catch (error) {
     console.error(error);
     toast.error("Unable to delete product.");
@@ -167,6 +207,63 @@ if (loading) {
       <h2>Manage Products</h2>
 
       <Form className="mb-4">
+        <Row className="g-3 mb-3">
+          <Col md={4}>
+            <Form.Control
+              type="search"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  setFilterCategoryId("");
+                  loadProducts(0, e.target.value, "");
+                }
+              }}
+            />
+          </Col>
+          <Col md={4}>
+            <Form.Select
+              value={filterCategoryId}
+              onChange={async (e) => {
+                const selected = e.target.value;
+                setFilterCategoryId(selected);
+                setSearchQuery("");
+                await loadProducts(0, "", selected);
+              }}
+            >
+              <option value="">Filter by category</option>
+              {categories.map((category) => (
+                <option key={category.categoryId} value={category.categoryId}>
+                  {category.categoryName}
+                </option>
+              ))}
+            </Form.Select>
+          </Col>
+          <Col md={4} className="d-flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                setSearchQuery("");
+                setFilterCategoryId("");
+                setAllProducts([]);
+                await loadProducts(0);
+              }}
+            >
+              Reset
+            </Button>
+            <Button
+              variant="outline-primary"
+              onClick={async () => {
+                setFilterCategoryId("");
+                await loadProducts(0, searchQuery, "");
+              }}
+            >
+              Search
+            </Button>
+          </Col>
+        </Row>
         <Form.Group className="mb-2">
           <Form.Label>Name</Form.Label>
           <Form.Control
@@ -225,7 +322,7 @@ if (loading) {
         </Button>
       </Form>
 
-      <Table striped bordered hover>
+      <Table striped bordered hover responsive>
         <thead>
           <tr>
             <th>Name</th>
@@ -237,35 +334,56 @@ if (loading) {
           </tr>
         </thead>
         <tbody>
-          {products.map((product) => (
-            <tr key={product.productId}>
-              <td>{product.productName}</td>
-              <td>{product.description}</td>
-              <td>{product.price}</td>
-              <td>{product.stock}</td>
-              <td>{product.category}</td>
-              <td>
-              <Button
-                variant="warning"
-                size="sm"
-                className="me-2"
-                onClick={() => handleEdit(product)}
-              >
-                Edit
-              </Button>
-
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => handleDelete(product.productId)}
-              >
-                Delete
-              </Button>
-            </td>
+          {products.length === 0 ? (
+            <tr>
+              <td colSpan="6" className="text-center py-4 text-muted">
+                No products found.
+              </td>
             </tr>
-          ))}
+          ) : (
+            products.map((product) => (
+              <tr key={product.productId}>
+                <td>{product.productName}</td>
+                <td>{product.description}</td>
+                <td>₹ {product.price}</td>
+                <td>{product.stock}</td>
+                <td>{product.category}</td>
+                <td>
+                  <Button
+                    variant="warning"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => handleEdit(product)}
+                  >
+                    Edit
+                  </Button>
+
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleDelete(product.productId)}
+                  >
+                    Delete
+                  </Button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </Table>
+
+      <FixedPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => {
+          setCurrentPage(page);
+          if (searchQuery.trim() || filterCategoryId) {
+            loadProducts(page - 1, searchQuery, filterCategoryId);
+          } else {
+            loadProducts(page - 1);
+          }
+        }}
+      />
     </Container>
   );
 }

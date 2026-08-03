@@ -45,6 +45,12 @@ function NavbarComponent() {
                   Home
                 </Nav.Link>
 
+                {hasAnyRole(["ROLE_ADMIN"]) && (
+                  <Nav.Link as={Link} to="/admin">
+                    Admin Dashboard
+                  </Nav.Link>
+                )}
+
                 {hasAnyRole(["ROLE_TENANT"]) && (
                   <>
                     <Nav.Link as={Link} to="/dashboard">
@@ -54,32 +60,40 @@ function NavbarComponent() {
                     <Nav.Link as={Link} to="/tenant/products">
                       Products
                     </Nav.Link>
+
+                    <Nav.Link as={Link} to="/tenant/orders">
+                      Tenant Orders
+                    </Nav.Link>
                   </>
                 )}
 
-                <Nav.Link as={Link} to="/favorites">
-                  Favorites
-                </Nav.Link>
+                {hasAnyRole(["ROLE_USER", "ROLE_TENANT"]) && (
+                  <>
+                    <Nav.Link as={Link} to="/favorites">
+                      Favorites
+                    </Nav.Link>
 
-                <Nav.Link as={Link} to="/orders">
-                  Orders
-                </Nav.Link>
+                    <Nav.Link as={Link} to="/orders">
+                      Orders
+                    </Nav.Link>
 
-                <Nav.Link as={Link} to="/cart">
-                  <FaShoppingCart className="me-1" />
+                    <Nav.Link as={Link} to="/cart">
+                      <FaShoppingCart className="me-1" />
 
-                  Cart
+                      Cart
 
-                  {cartCount > 0 && (
-                    <Badge
-                      bg="danger"
-                      pill
-                      className="ms-2"
-                    >
-                      {cartCount}
-                    </Badge>
-                  )}
-                </Nav.Link>
+                      {cartCount > 0 && (
+                        <Badge
+                          bg="danger"
+                          pill
+                          className="ms-2"
+                        >
+                          {cartCount}
+                        </Badge>
+                      )}
+                    </Nav.Link>
+                  </>
+                )}
 
                 <Nav.Link
                   onClick={handleLogout}

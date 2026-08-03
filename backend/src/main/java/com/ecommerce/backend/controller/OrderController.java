@@ -64,4 +64,35 @@ public ResponseEntity<String> cancelOrder(
 
     return ResponseEntity.ok("Order cancelled successfully.");
 }
+
+    @PreAuthorize("hasRole('TENANT')")
+    @PatchMapping("/{tenantName}/{orderId}/status")
+    public ResponseEntity<OrderResponse> updateOrderStatus(
+            @PathVariable String tenantName,
+            @PathVariable Long orderId,
+            @RequestParam String status) {
+
+        OrderResponse response = orderService.updateOrderStatus(tenantName, orderId, status);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('TENANT')")
+    @GetMapping("/{tenantName}/tenant")
+    public ResponseEntity<List<OrderResponse>> getOrdersByTenant(
+            @PathVariable String tenantName) {
+
+        return ResponseEntity.ok(orderService.getOrdersByTenant(tenantName));
+    }
+
+@PreAuthorize("hasAnyRole('USER','TENANT')")
+@PostMapping("/{tenantName}/user/{userId}/checkout")
+public ResponseEntity<OrderResponse> checkout(
+        @PathVariable String tenantName,
+        @PathVariable Long userId) {
+
+    OrderResponse response =
+            orderService.checkout(tenantName, userId);
+
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+}
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Badge,
+  Button,
   Card,
   Col,
   Container,
@@ -9,23 +10,23 @@ import {
   Table,
   Spinner,
 } from "react-bootstrap";
-import { getOrders } from "../../services/orderService";
+import { getTenantOrders, updateOrderStatus } from "../../services/orderService";
 import { useAuth } from "../../context/AuthContext";
 import FixedPagination from "../../components/common/FixedPagination";
 
-function OrdersPage() {
+function TenantOrders() {
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
   const [loading, setLoading] = useState(true);
-  const { tenantName, userId } = useAuth();
+  const itemsPerPage = 8;
+  const { tenantName } = useAuth();
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchOrders = async () => {
       try {
-        const activeTenant = tenantName || "global";
-        const response = await getOrders(activeTenant, userId);
+        if (!tenantName) return;
+        const response = await getTenantOrders(tenantName);
         setOrders(response.data || []);
       } catch (error) {
         console.error(error);
@@ -34,8 +35,8 @@ function OrdersPage() {
       }
     };
 
-    fetch();
-  }, [tenantName, userId]);
+    fetchOrders();
+  }, [tenantName]);
 
   const filteredOrders = orders.filter((order) => {
     const productSummary = (order.items || [])
@@ -44,6 +45,7 @@ function OrdersPage() {
 
     return [
       order.orderId,
+      order.customerName,
       order.totalAmount,
       order.orderDate,
       order.status,
@@ -59,12 +61,21 @@ function OrdersPage() {
     (sum, order) => sum + Number(order.totalAmount || 0),
     0
   );
-  const averageOrderValue = orderCount ? totalOrderValue / orderCount : 0;
   const pageCount = Math.max(1, Math.ceil(orderCount / itemsPerPage));
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleStatusChange = async (orderId, statusValue) => {
+    try {
+      await updateOrderStatus(tenantName, orderId, statusValue);
+      const response = await getTenantOrders(tenantName);
+      setOrders(response.data || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   if (loading) {
     return (
@@ -78,7 +89,7 @@ function OrdersPage() {
     <Container className="mt-5">
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
         <div>
-          <h2 className="mb-2">Order Insights</h2>
+          <h2 className="mb-2">Tenant Orders</h2>  
         </div>
       </div>
 
@@ -88,31 +99,15 @@ function OrdersPage() {
             <Card.Body>
               <Card.Title>Total Orders</Card.Title>
               <h3>{orderCount}</h3>
-              <Card.Text className="text-muted mb-0">
-                Total orders placed.
-              </Card.Text>
             </Card.Body>
           </Card>
         </Col>
         <Col md={4}>
           <Card className="shadow-sm h-100 border-0">
             <Card.Body>
-              <Card.Title>Total Value</Card.Title>
+              <Card.Title>Total Revenue</Card.Title>
               <h3>₹{totalOrderValue.toFixed(2)}</h3>
-              <Card.Text className="text-muted mb-0">
-                Combined order revenue shown here.
-              </Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4}>
-          <Card className="shadow-sm h-100 border-0">
-            <Card.Body>
-              <Card.Title>Average Order</Card.Title>
-              <h3>₹{averageOrderValue.toFixed(2)}</h3>
-              <Card.Text className="text-muted mb-0">
-                Average value per displayed order.
-              </Card.Text>
+              
             </Card.Body>
           </Card>
         </Col>
@@ -122,11 +117,11 @@ function OrdersPage() {
         <Card.Body>
           <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
             <div>
-              <h5 className="mb-1">Orders</h5>
+              <h5 className="mb-1">Tenant orders</h5>
             </div>
             <Form.Control
               type="search"
-              placeholder="Search orders by date, total, or status"
+              placeholder="Search orders"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -143,20 +138,28 @@ function OrdersPage() {
           <Table striped bordered hover responsive>
             <thead>
               <tr>
+                <th>Customer</th>
                 <th>Products</th>
                 <th>Total</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Update</th>
               </tr>
             </thead>
             <tbody>
               {paginatedOrders.map((order) => (
                 <tr key={order.orderId}>
+                  <td>{order.customerName || "-"}</td>
                   <td>
                     <div className="d-flex flex-column gap-1">
                       {(order.items || []).map((item, index) => (
-                        <Badge key={`${order.orderId}-${item.productName}-${index}`} bg="light" text="dark" className="w-fit-content align-self-start">
-                          {item.productName} x {item.quantity}
+                        <Badge
+                          key={`${order.orderId}-${item.productName}-${index}`}
+                          bg="light"
+                          text="dark"
+                          className="w-fit-content align-self-start"
+                        >
+                          {item.productName} × {item.quantity}
                         </Badge>
                       ))}
                     </div>
@@ -164,11 +167,21 @@ function OrdersPage() {
                   <td>₹{Number(order.totalAmount).toFixed(2)}</td>
                   <td>{order.orderDate}</td>
                   <td>{order.status}</td>
+                  <td>
+                    <Form.Select
+                      value={order.status || "ORDERED"}
+                      onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
+                    >
+                      <option value="ORDERED">ORDERED</option>
+                      <option value="SHIPPED">SHIPPED</option>
+                      <option value="DELIVERED">DELIVERED</option>
+                    </Form.Select>
+                  </td>
                 </tr>
               ))}
               {paginatedOrders.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="text-center text-muted py-4">
+                  <td colSpan="6" className="text-center text-muted py-4">
                     No orders found.
                   </td>
                 </tr>
@@ -187,4 +200,4 @@ function OrdersPage() {
   );
 }
 
-export default OrdersPage;
+export default TenantOrders;

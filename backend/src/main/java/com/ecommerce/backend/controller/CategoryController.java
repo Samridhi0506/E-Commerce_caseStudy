@@ -21,49 +21,42 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @PreAuthorize("hasRole('TENANT')")
-    @PostMapping("/{tenantName}")
+    @PreAuthorize("hasAnyRole('TENANT', 'ADMIN')")
+    @PostMapping
     public ResponseEntity<CategoryResponse> createCategory(
-        @PathVariable String tenantName,
         @RequestBody CreateCategoryRequest request) {
 
-    CategoryResponse response =
-            categoryService.createCategory(tenantName, request);
+    CategoryResponse response = categoryService.createCategory(request);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
 }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{tenantName}")
-    public ResponseEntity<List<CategoryResponse>> getAllCategories(
-        @PathVariable String tenantName) {
+    @GetMapping
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
 
-    List<CategoryResponse> categories =
-            categoryService.getAllCategories(tenantName);
+    List<CategoryResponse> categories = categoryService.getAllCategories();
 
     return ResponseEntity.ok(categories);
 }
 
-    @PreAuthorize("hasRole('TENANT')")
-    @PutMapping("/{tenantName}/{categoryId}")
+    @PreAuthorize("hasAnyRole('TENANT', 'ADMIN')")
+    @PutMapping("/{categoryId}")
     public ResponseEntity<CategoryResponse> updateCategory(
-        @PathVariable String tenantName,
         @PathVariable Long categoryId,
         @RequestBody CreateCategoryRequest request) {
 
-    CategoryResponse response =
-            categoryService.updateCategory(tenantName, categoryId, request);
+    CategoryResponse response = categoryService.updateCategory(categoryId, request);
 
     return ResponseEntity.ok(response);
 }
 
-    @PreAuthorize("hasRole('TENANT')")
-    @DeleteMapping("/{tenantName}/{categoryId}")
+    @PreAuthorize("hasAnyRole('TENANT', 'ADMIN')")
+    @DeleteMapping("/{categoryId}")
     public ResponseEntity<String> deleteCategory(
-        @PathVariable String tenantName,
         @PathVariable Long categoryId) {
 
-    categoryService.deleteCategory(tenantName, categoryId);
+    categoryService.deleteCategory(categoryId);
 
     return ResponseEntity.ok("Category deleted successfully.");
 }

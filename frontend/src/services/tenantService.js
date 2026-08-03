@@ -4,6 +4,12 @@ export const getTenants = async () => {
   return await api.get(`/tenants`);
 };
 
+export const getTenantsPage = async (page = 0, size = 6, keyword = "") => {
+  return await api.get(`/tenants/page`, {
+    params: { page, size, keyword },
+  });
+};
+
 export const createTenant = async (tenant) => {
   return await api.post(`/tenants`, tenant);
 };

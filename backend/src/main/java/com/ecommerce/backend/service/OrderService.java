@@ -10,7 +10,7 @@ public interface OrderService {
     OrderResponse placeOrder(String tenantName,
                              Long userId,
                              CreateOrderRequest request);
-
+    List<OrderResponse> getOrdersByTenant(String tenantName);
     List<OrderResponse> getOrdersByUser(String tenantName,
                                         Long userId);
 
@@ -19,4 +19,8 @@ public interface OrderService {
 
     void cancelOrder(String tenantName,
                      Long orderId);
+
+    OrderResponse updateOrderStatus(String tenantName, Long orderId, String status);
+
+    OrderResponse checkout(String tenantName, Long userId);
 }

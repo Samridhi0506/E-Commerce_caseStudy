@@ -18,4 +18,6 @@ public class ProductResponse {
     private Integer stock;
     private String category;
     private String tenant;
+    private String createdByUsername;
+    private String createdByEmail;
 }

@@ -51,7 +51,7 @@ public class ProductController {
     public ResponseEntity<Page<ProductResponse>> getAllProducts(
             @PathVariable String tenantName,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "12") int size) {
 
         Page<ProductResponse> products =
                 productService.getAllProducts(tenantName, page, size);

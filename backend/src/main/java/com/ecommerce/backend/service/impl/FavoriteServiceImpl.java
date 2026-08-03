@@ -38,6 +38,16 @@ public class FavoriteServiceImpl implements FavoriteService {
         this.tenantRepository = tenantRepository;
     }
 
+    private Tenant resolveTenant(String tenantName) {
+
+        if (tenantName == null || tenantName.isBlank() || "global".equalsIgnoreCase(tenantName)) {
+            return null;
+        }
+
+        return tenantRepository.findByTenantName(tenantName)
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+    }
+
     private void validateUserAccess(Long userId) {
 
         Authentication authentication =
@@ -75,14 +85,24 @@ public FavoriteResponse addFavorite(String tenantName,
                                     Long userId,
                                     AddFavoriteRequest request) {
 
+    Tenant tenant = resolveTenant(tenantName);
+
     validateUserAccess(userId);
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    Product product = productRepository
-        .findById(request.getProductId())
-        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    Product product;
+
+    if (tenant != null) {
+        product = productRepository
+                .findByProductIdAndTenant(request.getProductId(), tenant)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    } else {
+        product = productRepository
+                .findById(request.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    }
 
     Favorite existingFavorite = favoriteRepository
             .findByUserAndProduct(user, product)
@@ -99,8 +119,12 @@ public FavoriteResponse addFavorite(String tenantName,
         response.setDescription(product.getDescription());
         response.setPrice(product.getPrice());
         response.setStock(product.getStock());
-        response.setCategory(product.getCategory().getCategoryName());
-        response.setTenant(product.getTenant().getTenantName());
+        response.setCategory(product.getCategory() != null
+                ? product.getCategory().getCategoryName()
+                : null);
+        response.setTenant(product.getTenant() != null
+                ? product.getTenant().getTenantName()
+                : null);
 
         return response;
     }
@@ -119,8 +143,12 @@ public FavoriteResponse addFavorite(String tenantName,
     response.setDescription(product.getDescription());
     response.setPrice(product.getPrice());
     response.setStock(product.getStock());
-    response.setCategory(product.getCategory().getCategoryName());
-    response.setTenant(product.getTenant().getTenantName());
+    response.setCategory(product.getCategory() != null
+            ? product.getCategory().getCategoryName()
+            : null);
+    response.setTenant(product.getTenant() != null
+            ? product.getTenant().getTenantName()
+            : null);
 
     return response;
 }
@@ -128,6 +156,7 @@ public FavoriteResponse addFavorite(String tenantName,
     @Override
     public List<FavoriteResponse> getFavoritesByUser(String tenantName,
                                                      Long userId) {
+        resolveTenant(tenantName);
         validateUserAccess(userId);
 
         User user = userRepository.findById(userId)
@@ -146,8 +175,12 @@ public FavoriteResponse addFavorite(String tenantName,
             response.setDescription(product.getDescription());
             response.setPrice(product.getPrice());
             response.setStock(product.getStock());
-            response.setCategory(product.getCategory().getCategoryName());
-            response.setTenant(product.getTenant().getTenantName());
+            response.setCategory(product.getCategory() != null
+                    ? product.getCategory().getCategoryName()
+                    : null);
+            response.setTenant(product.getTenant() != null
+                    ? product.getTenant().getTenantName()
+                    : null);
 
             return response;
 
@@ -157,6 +190,8 @@ public FavoriteResponse addFavorite(String tenantName,
     @Override
     public void removeFavorite(String tenantName,
                                Long favoriteId) {
+        resolveTenant(tenantName);
+
         Favorite favorite = favoriteRepository.findById(favoriteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Favorite not found"));
 

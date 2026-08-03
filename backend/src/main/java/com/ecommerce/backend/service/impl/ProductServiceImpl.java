@@ -54,6 +54,10 @@ public ProductResponse createProduct(String tenantName, CreateProductRequest req
     Tenant tenant = tenantRepository.findByTenantName(tenantName)
             .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
     Product product = new Product();
     product.setProductName(request.getProductName());
     product.setDescription(request.getDescription());
@@ -61,6 +65,7 @@ public ProductResponse createProduct(String tenantName, CreateProductRequest req
     product.setStock(request.getStock());
     product.setCategory(category);
     product.setTenant(tenant);
+    product.setCreatedBy(user);
 
     Product savedProduct = productRepository.save(product);
 
@@ -72,6 +77,8 @@ public ProductResponse createProduct(String tenantName, CreateProductRequest req
     response.setStock(savedProduct.getStock());
     response.setCategory(savedProduct.getCategory().getCategoryName());
     response.setTenant(savedProduct.getTenant().getTenantName());
+    response.setCreatedByUsername(savedProduct.getCreatedBy() != null ? savedProduct.getCreatedBy().getUsername() : null);
+    response.setCreatedByEmail(savedProduct.getCreatedBy() != null ? savedProduct.getCreatedBy().getEmail() : null);
 
     return response;
 }
@@ -284,6 +291,8 @@ public ProductResponse getProductById(Long productId) {
     response.setStock(product.getStock());
     response.setCategory(product.getCategory().getCategoryName());
     response.setTenant(product.getTenant().getTenantName());
+    response.setCreatedByUsername(product.getCreatedBy() != null ? product.getCreatedBy().getUsername() : null);
+    response.setCreatedByEmail(product.getCreatedBy() != null ? product.getCreatedBy().getEmail() : null);
 
     return response;
 }

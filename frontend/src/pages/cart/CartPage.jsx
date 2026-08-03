@@ -7,10 +7,17 @@ import {
   Table,
 } from "react-bootstrap";
 import { FaMinus, FaPlus, FaTrash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
+import { checkout } from "../../services/orderService";
 
 
 function CartPage() {
+
+  const navigate = useNavigate();
+  const { tenantName, userId } = useAuth();
 
   const {
   cartItems,
@@ -18,12 +25,45 @@ function CartPage() {
   increaseQuantity,
   decreaseQuantity,
   removeItem,
+  refreshCart,
 } = useCart();
 
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + Number(item.subtotal),
     0
   );
+
+  const handleCheckout = async () => {
+    if (!userId) {
+      toast.error("Please log in to checkout.");
+      return;
+    }
+
+    try {
+      const tenantGroups = cartItems.reduce((acc, item) => {
+        const key = item.tenant || tenantName || "global";
+
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+
+        acc[key].push(item);
+        return acc;
+      }, {});
+
+      for (const tenant of Object.keys(tenantGroups)) {
+        await checkout(tenant, userId);
+      }
+
+      await refreshCart();
+      toast.success("Order placed successfully!");
+      navigate("/orders");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Unable to complete checkout."
+      );
+    }
+  };
 
   if (loading) {
     return (
@@ -167,6 +207,7 @@ function CartPage() {
                 <Button
                   size="lg"
                   variant="success"
+                  onClick={handleCheckout}
                 >
                   Proceed to Checkout
                 </Button>
