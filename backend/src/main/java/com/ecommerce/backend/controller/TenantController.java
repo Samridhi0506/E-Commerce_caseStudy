@@ -4,6 +4,7 @@ import com.ecommerce.backend.dto.request.CreateTenantRequest;
 import com.ecommerce.backend.dto.response.TenantResponse;
 import com.ecommerce.backend.service.TenantService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,10 +32,22 @@ public class TenantController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<TenantResponse>> getAllTenants() {
 
         return ResponseEntity.ok(tenantService.getAllTenants());
+    }
+
+    @GetMapping("/page")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<TenantResponse>> getAllTenantsPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) String keyword) {
+
+        return ResponseEntity.ok(
+                tenantService.getAllTenantsPage(page, size, keyword)
+        );
     }
 
     @GetMapping("/{tenantId}")

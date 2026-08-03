@@ -24,11 +24,7 @@ public CategoryServiceImpl(CategoryRepository categoryRepository,
 }
 
     @Override
-public CategoryResponse createCategory(String tenantName,
-                                       CreateCategoryRequest request) {
-
-    tenantRepository.findByTenantName(tenantName)
-            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+public CategoryResponse createCategory(CreateCategoryRequest request) {
 
     Category category = new Category();
     category.setCategoryName(request.getCategoryName());
@@ -43,12 +39,8 @@ public CategoryResponse createCategory(String tenantName,
 }
 
     @Override
-public CategoryResponse updateCategory(String tenantName,
-                                       Long categoryId,
+public CategoryResponse updateCategory(Long categoryId,
                                        CreateCategoryRequest request) {
-
-    tenantRepository.findByTenantName(tenantName)
-            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
 
     Category category = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -65,10 +57,7 @@ public CategoryResponse updateCategory(String tenantName,
 }
 
    @Override
-public void deleteCategory(String tenantName, Long categoryId) {
-
-    tenantRepository.findByTenantName(tenantName)
-            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
+public void deleteCategory(Long categoryId) {
 
     Category category = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -77,11 +66,7 @@ public void deleteCategory(String tenantName, Long categoryId) {
 }
 
     @Override
-public List<CategoryResponse> getAllCategories(String tenantName) {
-
-    tenantRepository.findByTenantName(tenantName)
-            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
-
+public List<CategoryResponse> getAllCategories() {
     List<Category> categories = categoryRepository.findAll();
 
     return categories.stream().map(category -> {

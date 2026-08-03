@@ -2,6 +2,7 @@ package com.ecommerce.backend.service;
 
 import com.ecommerce.backend.dto.request.CreateOrderRequest;
 import com.ecommerce.backend.dto.response.OrderResponse;
+import com.ecommerce.backend.entity.Cart;
 import com.ecommerce.backend.entity.Order;
 import com.ecommerce.backend.entity.OrderItem;
 import com.ecommerce.backend.entity.Product;
@@ -9,6 +10,7 @@ import com.ecommerce.backend.entity.Tenant;
 import com.ecommerce.backend.entity.User;
 import com.ecommerce.backend.exception.BadRequestException;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
+import com.ecommerce.backend.repository.CartRepository;
 import com.ecommerce.backend.repository.OrderItemRepository;
 import com.ecommerce.backend.repository.OrderRepository;
 import com.ecommerce.backend.repository.ProductRepository;
@@ -54,6 +56,9 @@ class OrderServiceImplTest {
 
     @Mock
     private TenantRepository tenantRepository;
+
+    @Mock
+    private CartRepository cartRepository;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -400,6 +405,76 @@ void getOrderById_ShouldReturnOrderSuccessfully() {
 
     assertEquals(100L, response.getOrderId());
     assertEquals(1, response.getItems().size());
+}
+
+@Test
+void checkout_ShouldCheckoutOnlyRequestedTenantItemsAndClearThoseCartRows() {
+
+    Tenant nikeTenant = new Tenant();
+    nikeTenant.setTenantName("nike");
+
+    Tenant adidasTenant = new Tenant();
+    adidasTenant.setTenantName("adidas");
+
+    User user = new User();
+    user.setUserId(1L);
+
+    Product nikeProduct = new Product();
+    nikeProduct.setProductId(10L);
+    nikeProduct.setProductName("Air Max");
+    nikeProduct.setPrice(BigDecimal.valueOf(100));
+    nikeProduct.setStock(10);
+    nikeProduct.setTenant(nikeTenant);
+
+    Product adidasProduct = new Product();
+    adidasProduct.setProductId(20L);
+    adidasProduct.setProductName("Runner");
+    adidasProduct.setPrice(BigDecimal.valueOf(200));
+    adidasProduct.setStock(5);
+    adidasProduct.setTenant(adidasTenant);
+
+    Cart nikeCart = new Cart();
+    nikeCart.setCartId(1L);
+    nikeCart.setUser(user);
+    nikeCart.setProduct(nikeProduct);
+    nikeCart.setQuantity(2);
+
+    Cart adidasCart = new Cart();
+    adidasCart.setCartId(2L);
+    adidasCart.setUser(user);
+    adidasCart.setProduct(adidasProduct);
+    adidasCart.setQuantity(1);
+
+    Order createdOrder = new Order();
+    createdOrder.setOrderId(500L);
+    createdOrder.setUser(user);
+    createdOrder.setOrderDate(java.time.LocalDateTime.now());
+    createdOrder.setTotalAmount(BigDecimal.valueOf(200));
+
+    when(tenantRepository.findByTenantName("nike"))
+            .thenReturn(Optional.of(nikeTenant));
+
+    when(userRepository.findByUsername("tenantuser"))
+            .thenReturn(Optional.of(user));
+
+    when(userRepository.findById(1L))
+            .thenReturn(Optional.of(user));
+
+    when(cartRepository.findByUser(user))
+            .thenReturn(List.of(nikeCart, adidasCart));
+
+    when(orderRepository.save(any(Order.class)))
+            .thenReturn(createdOrder);
+
+    OrderResponse response = orderService.checkout("nike", 1L);
+
+    assertEquals(500L, response.getOrderId());
+    assertEquals(1, response.getItems().size());
+    assertEquals("Air Max", response.getItems().get(0).getProductName());
+
+    verify(productRepository).save(nikeProduct);
+    verify(cartRepository).deleteAll(List.of(nikeCart));
+    verify(cartRepository, never()).deleteAll(List.of(nikeCart, adidasCart));
 }
 
 @Test

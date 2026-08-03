@@ -3,10 +3,8 @@ package com.ecommerce.backend.service;
 import com.ecommerce.backend.dto.request.CreateCategoryRequest;
 import com.ecommerce.backend.dto.response.CategoryResponse;
 import com.ecommerce.backend.entity.Category;
-import com.ecommerce.backend.entity.Tenant;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.repository.CategoryRepository;
-import com.ecommerce.backend.repository.TenantRepository;
 import com.ecommerce.backend.service.impl.CategoryServiceImpl;
 
 import org.junit.jupiter.api.Test;
@@ -30,197 +28,112 @@ class CategoryServiceImplTest {
     @Mock
     private CategoryRepository categoryRepository;
 
-    @Mock
-    private TenantRepository tenantRepository;
-
     @InjectMocks
     private CategoryServiceImpl categoryService;
 
+    @Test
+    void createCategory_ShouldCreateSuccessfully() {
+        CreateCategoryRequest request = new CreateCategoryRequest();
+        request.setCategoryName("Shoes");
 
-@Test
-void createCategory_ShouldCreateSuccessfully() {
+        Category category = new Category();
+        category.setCategoryId(1L);
+        category.setCategoryName("Shoes");
 
-    Tenant tenant = new Tenant();
-    tenant.setTenantName("nike");
+        when(categoryRepository.save(any(Category.class)))
+                .thenReturn(category);
 
-    CreateCategoryRequest request = new CreateCategoryRequest();
-    request.setCategoryName("Shoes");
+        CategoryResponse response = categoryService.createCategory(request);
 
-    Category category = new Category();
-    category.setCategoryId(1L);
-    category.setCategoryName("Shoes");
+        assertNotNull(response);
+        assertEquals(1L, response.getCategoryId());
+        assertEquals("Shoes", response.getCategoryName());
 
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.of(tenant));
+        verify(categoryRepository).save(any(Category.class));
+    }
 
-    when(categoryRepository.save(any(Category.class)))
-            .thenReturn(category);
+    @Test
+    void updateCategory_ShouldUpdateSuccessfully() {
+        Category category = new Category();
+        category.setCategoryId(1L);
+        category.setCategoryName("Old");
 
-    CategoryResponse response =
-            categoryService.createCategory("nike", request);
+        CreateCategoryRequest request = new CreateCategoryRequest();
+        request.setCategoryName("Shoes");
 
-    assertNotNull(response);
-    assertEquals(1L, response.getCategoryId());
-    assertEquals("Shoes", response.getCategoryName());
+        when(categoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
 
-    verify(categoryRepository).save(any(Category.class));
-}
+        when(categoryRepository.save(any(Category.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-@Test
-void createCategory_ShouldThrow_WhenTenantNotFound() {
+        CategoryResponse response = categoryService.updateCategory(1L, request);
 
-    CreateCategoryRequest request = new CreateCategoryRequest();
-    request.setCategoryName("Shoes");
+        assertNotNull(response);
+        assertEquals("Shoes", response.getCategoryName());
 
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.empty());
+        verify(categoryRepository).save(category);
+    }
 
-    ResourceNotFoundException exception =
-            assertThrows(ResourceNotFoundException.class,
-                    () -> categoryService.createCategory("nike", request));
+    @Test
+    void updateCategory_ShouldThrow_WhenCategoryNotFound() {
+        CreateCategoryRequest request = new CreateCategoryRequest();
+        request.setCategoryName("Shoes");
 
-    assertEquals("Tenant not found", exception.getMessage());
+        when(categoryRepository.findById(1L))
+                .thenReturn(Optional.empty());
 
-    verify(categoryRepository, never()).save(any(Category.class));
-}
+        ResourceNotFoundException exception =
+                assertThrows(ResourceNotFoundException.class,
+                        () -> categoryService.updateCategory(1L, request));
 
-@Test
-void updateCategory_ShouldThrow_WhenTenantNotFound() {
+        assertEquals("Category not found", exception.getMessage());
 
-    CreateCategoryRequest request = new CreateCategoryRequest();
-    request.setCategoryName("Shoes");
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
 
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.empty());
+    @Test
+    void deleteCategory_ShouldDeleteSuccessfully() {
+        Category category = new Category();
+        category.setCategoryId(1L);
 
-    ResourceNotFoundException exception =
-            assertThrows(ResourceNotFoundException.class,
-                    () -> categoryService.updateCategory("nike", 1L, request));
+        when(categoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
 
-    assertEquals("Tenant not found", exception.getMessage());
+        categoryService.deleteCategory(1L);
 
-    verify(categoryRepository, never()).findById(anyLong());
-    verify(categoryRepository, never()).save(any(Category.class));
-}
+        verify(categoryRepository).delete(category);
+    }
 
-@Test
-void updateCategory_ShouldUpdateSuccessfully() {
+    @Test
+    void deleteCategory_ShouldThrow_WhenCategoryNotFound() {
+        when(categoryRepository.findById(1L))
+                .thenReturn(Optional.empty());
 
-    Tenant tenant = new Tenant();
-    tenant.setTenantName("nike");
+        ResourceNotFoundException exception =
+                assertThrows(ResourceNotFoundException.class,
+                        () -> categoryService.deleteCategory(1L));
 
-    Category category = new Category();
-    category.setCategoryId(1L);
-    category.setCategoryName("Old");
+        assertEquals("Category not found", exception.getMessage());
 
-    CreateCategoryRequest request = new CreateCategoryRequest();
-    request.setCategoryName("Shoes");
+        verify(categoryRepository, never()).delete(any(Category.class));
+    }
 
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.of(tenant));
+    @Test
+    void getAllCategories_ShouldReturnCategoriesSuccessfully() {
+        Category category = new Category();
+        category.setCategoryId(1L);
+        category.setCategoryName("Shoes");
 
-    when(categoryRepository.findById(1L))
-            .thenReturn(Optional.of(category));
+        when(categoryRepository.findAll())
+                .thenReturn(List.of(category));
 
-    when(categoryRepository.save(any(Category.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        List<CategoryResponse> response =
+                categoryService.getAllCategories();
 
-    CategoryResponse response =
-            categoryService.updateCategory("nike", 1L, request);
+        assertEquals(1, response.size());
+        assertEquals("Shoes", response.get(0).getCategoryName());
 
-    assertNotNull(response);
-    assertEquals("Shoes", response.getCategoryName());
-
-    verify(categoryRepository).save(category);
-}
-
-@Test
-void updateCategory_ShouldThrow_WhenCategoryNotFound() {
-
-    Tenant tenant = new Tenant();
-    tenant.setTenantName("nike");
-
-    CreateCategoryRequest request = new CreateCategoryRequest();
-    request.setCategoryName("Shoes");
-
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.of(tenant));
-
-    when(categoryRepository.findById(1L))
-            .thenReturn(Optional.empty());
-
-    ResourceNotFoundException exception =
-            assertThrows(ResourceNotFoundException.class,
-                    () -> categoryService.updateCategory("nike", 1L, request));
-
-    assertEquals("Category not found", exception.getMessage());
-
-    verify(categoryRepository, never()).save(any(Category.class));
-}
-
-@Test
-void deleteCategory_ShouldDeleteSuccessfully() {
-
-    Tenant tenant = new Tenant();
-    tenant.setTenantName("nike");
-
-    Category category = new Category();
-    category.setCategoryId(1L);
-
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.of(tenant));
-
-    when(categoryRepository.findById(1L))
-            .thenReturn(Optional.of(category));
-
-    categoryService.deleteCategory("nike", 1L);
-
-    verify(categoryRepository).delete(category);
-}
-
-@Test
-void deleteCategory_ShouldThrow_WhenCategoryNotFound() {
-
-    Tenant tenant = new Tenant();
-    tenant.setTenantName("nike");
-
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.of(tenant));
-
-    when(categoryRepository.findById(1L))
-            .thenReturn(Optional.empty());
-
-    ResourceNotFoundException exception =
-            assertThrows(ResourceNotFoundException.class,
-                    () -> categoryService.deleteCategory("nike", 1L));
-
-    assertEquals("Category not found", exception.getMessage());
-
-    verify(categoryRepository, never()).delete(any(Category.class));
-}
-
-@Test
-void getAllCategories_ShouldReturnCategoriesSuccessfully() {
-
-    Tenant tenant = new Tenant();
-    tenant.setTenantName("nike");
-
-    Category category = new Category();
-    category.setCategoryId(1L);
-    category.setCategoryName("Shoes");
-
-    when(tenantRepository.findByTenantName("nike"))
-            .thenReturn(Optional.of(tenant));
-
-    when(categoryRepository.findAll())
-            .thenReturn(List.of(category));
-
-    List<CategoryResponse> response =
-            categoryService.getAllCategories("nike");
-
-    assertEquals(1, response.size());
-    assertEquals("Shoes", response.getFirst().getCategoryName());
-
-    verify(categoryRepository).findAll();
-}
+        verify(categoryRepository).findAll();
+    }
 }

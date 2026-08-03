@@ -5,6 +5,10 @@ import com.ecommerce.backend.dto.response.TenantResponse;
 import com.ecommerce.backend.entity.Tenant;
 import com.ecommerce.backend.repository.TenantRepository;
 import com.ecommerce.backend.service.TenantService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.backend.entity.Role;
@@ -60,6 +64,32 @@ private final KeycloakService keycloakService;
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    @Override
+    public Page<TenantResponse> getAllTenantsPage(int page, int size, String keyword) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+
+        Page<Tenant> tenants;
+
+        if (normalizedKeyword.isEmpty()) {
+            tenants = tenantRepository.findAll(pageable);
+        } else {
+            tenants = tenantRepository.findByTenantNameContainingIgnoreCaseOrDomainContainingIgnoreCase(
+                    normalizedKeyword,
+                    normalizedKeyword,
+                    pageable
+            );
+        }
+
+        List<TenantResponse> content = tenants.getContent()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return new PageImpl<>(content, pageable, tenants.getTotalElements());
     }
 
     @Override

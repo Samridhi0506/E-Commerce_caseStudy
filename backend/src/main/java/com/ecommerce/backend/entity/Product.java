@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
+import com.ecommerce.backend.entity.User;
+
 @Entity
 @Table(name = "products")
 @Getter
@@ -33,6 +35,10 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
+
+    @ManyToOne
+    @JoinColumn(name = "created_by_user_id")
+    private User createdBy;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)

@@ -16,6 +16,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -119,6 +122,37 @@ void getAllTenants_ShouldReturnAllTenants() {
 }
 
 
+
+@Test
+void getAllTenantsPage_ShouldReturnFilteredPagedTenants() {
+
+    Tenant tenant1 = Tenant.builder()
+            .tenantId(1L)
+            .tenantName("Nike")
+            .domain("nike.com")
+            .build();
+
+    Tenant tenant2 = Tenant.builder()
+            .tenantId(2L)
+            .tenantName("Puma")
+            .domain("puma.com")
+            .build();
+
+    PageRequest pageable = PageRequest.of(0, 2);
+    Page<Tenant> tenantPage = new PageImpl<>(List.of(tenant1, tenant2), pageable, 2);
+
+    when(tenantRepository.findByTenantNameContainingIgnoreCaseOrDomainContainingIgnoreCase("ni", "ni", pageable))
+            .thenReturn(tenantPage);
+
+    Page<TenantResponse> response = tenantService.getAllTenantsPage(0, 2, "ni");
+
+    assertEquals(2, response.getTotalElements());
+    assertEquals(2, response.getContent().size());
+    assertEquals("Nike", response.getContent().get(0).getTenantName());
+    assertEquals("Puma", response.getContent().get(1).getTenantName());
+
+    verify(tenantRepository).findByTenantNameContainingIgnoreCaseOrDomainContainingIgnoreCase("ni", "ni", pageable);
+}
 
 @Test
 void getTenantById_ShouldThrow_WhenTenantNotFound() {
